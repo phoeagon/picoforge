@@ -75,38 +75,6 @@ jobs:
                   # Set the output correctly for GitHub Actions
                   echo "version=$version" >> $GITHUB_ENV
 
-            - name: Create Git tag
-              run: |
-                  git tag v${{ env.version }}
-                  git push origin v${{ env.version }}
-
-            # Step 1: Generate auto-generated changelog (using a community Action)
-            - name: Generate Changelog
-              id: changelog
-              uses: requarks/changelog-action@v1
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  tag: v${{ env.version }}
-
-            # Step 2: Generate "What's Changed" block from commits
-            - name: Generate "What's Changed" block
-              id: whats_changed
-              shell: bash
-              run: |
-                  # Get commit messages between the last tag and HEAD, or use all commits if no tags exist
-                  if git describe --tags --abbrev=0 >/dev/null 2>&1; then
-                    commits=$(git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"- %s")
-                  else
-                    commits=$(git log --pretty=format:"- %s")
-                  fi
-
-                  # Format for GitHub Actions output in a cross-platform way
-                  {
-                    echo "whats_changed<<EOF"
-                    echo "$commits"
-                    echo "EOF"
-                  } >> $GITHUB_OUTPUT
-
             # Step 3: Publish the release with combined release body
             - uses: tauri-apps/tauri-action@v0
               env:
@@ -119,12 +87,6 @@ jobs:
 
                       ## Caution:
                       - This is an alpha release and thus can have some bugs.
-
-                      ## What's Changed:
-                      ${{ steps.whats_changed.outputs.whats_changed }}
-
-                      ## Auto-generated Changelog:
-                      ${{ steps.changelog.outputs.changes }}
 
                   releaseDraft: false
                   prerelease: false
