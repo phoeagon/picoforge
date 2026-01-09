@@ -6,15 +6,15 @@
 
 **An open source commissioning tool for Pico FIDO security keys**
 
-> [!IMPORTANT]
-> PicoForge is an independent, community-developed tool and is not affiliated with or endorsed by the official Pico FIDO project. 
-> This software does not share any code with the official closed-source Pico FIDO commissioning application.
-
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![GitHub issues](https://img.shields.io/github/issues/librekeys/picoforge)](https://github.com/librekeys/picoforge/issues)
 [![GitHub stars](https://img.shields.io/github/stars/librekeys/picoforge)](https://github.com/librekeys/picoforge/stargazers)
 
 </div>
+
+> [!IMPORTANT]
+> PicoForge is an independent, community-developed tool and is not affiliated with or endorsed by the official [pico-fido](https://github.com/polhenarejos/pico-fido) project. 
+> This software does not share any code with the official closed-source pico-fido application.
 
 ## About
 
@@ -236,15 +236,22 @@ See [LICENSE](LICENSE) for full details.
 
 ## Disclaimer
 
-PicoForge is experimental software. The secure boot feature can permanently lock devices if misconfigured. Always understand the implications before enabling security features.
+> [!WARNING]
+> PicoForge is experimental software and still in the Alpha stage! 
+> The app does contain bugs and is not secure by any means.
+>
+> It does not support all the features exposed by the `pico-fido` firmware and `pico-hsm`.
+>
+> The secure boot feature can permanently lock devices if misconfigured. Always understand the implications before enabling security features.
 
-**USB VID/PID Notice**: The vendor presets provided in this software include USB Vendor IDs (VID) and Product IDs (PID) that are the intellectual property of their respective owners (Yubico, Nitrokey, FSIJ, Raspberry Pi Foundation, and others). These identifiers are included for personal development, testing, and educational purposes only. You are NOT authorized to distribute or commercially market devices using VID/PID combinations you do not own or license. Commercial distribution requires obtaining your own VID from the USB Implementers Forum ([usb.org](https://www.usb.org/getting-vendor-id)) and complying with all applicable trademark and certification requirements. Unauthorized use may violate USB-IF policies and intellectual property laws. The PicoForge developers assume no liability for misuse of USB identifiers.
+> [!CAUTION]
+> **USB VID/PID Notice**: The vendor presets provided in this software include USB Vendor IDs (VID) and Product IDs (PID) that are the intellectual property of their respective owners (Yubico, Nitrokey, FSIJ, Raspberry Pi Foundation, and others). These identifiers are included for testing and educational purposes only. You are NOT authorized to distribute or commercially market devices using VID/PID combinations you do not own or license. Commercial distribution requires obtaining your own VID from the USB Implementers Forum ([usb.org](https://www.usb.org/getting-vendor-id)) and complying with all applicable trademark and certification requirements. Unauthorized use may violate USB-IF policies and intellectual property laws. The PicoForge developers assume no liability for misuse of USB identifiers.
 
 ---
 
 <div align="center">
 
-**Made by the LibreKeys community**
+**Made with ❤️ by the LibreKeys community**
 
 Copyright © 2026 Suyog Tandel
 
