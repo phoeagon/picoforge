@@ -24,10 +24,6 @@ BuildRequires:  pkgconfig(appindicator3-0.1)
 BuildRequires:  pkgconfig(libpcsclite)
 BuildRequires:  pkgconfig(libudev)
 
-# Build Tools
-BuildRequires:  rust
-BuildRequires:  cargo
-
 %description
 PicoForge is a modern desktop application for configuring and managing Pico FIDO security keys. Built with Rust, Tauri, and Svelte, it provides an intuitive interface for:
 
@@ -46,7 +42,7 @@ export DENO_INSTALL="$HOME/.deno"
 export PATH="$DENO_INSTALL/bin:$PATH"
 deno --version
 
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 export PATH=$(pwd)/.cargo/bin:$PATH
 rustc --version
 
