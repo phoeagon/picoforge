@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 Name:           picoforge
 Version:        0.2.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        An open source commissioning tool for Pico FIDO security keys. Developed with Rust, Tauri, and Svelte.
 License:        AGPL-3.0
 URL:            https://github.com/librekeys/picoforge
@@ -75,6 +75,9 @@ install -m 644 src-tauri/icons/in.suyogtandel.picoforge.svg %{buildroot}%{_datad
 %{_datadir}/icons/hicolor/scalable/apps/in.suyogtandel.picoforge.svg
 
 %changelog
+* Sat Jan 17 2026 Suyog Tandel <git@suyogtandel.in>
+- fix: rust install command in spec file (git@suyogtandel.in)
+
 * Sat Jan 17 2026 Suyog Tandel <git@suyogtandel.in> 0.2.1-2
 - fix: use universal pkgconfig names and bump release to 2 (git@suyogtandel.in)
 - chore:update rpm spec file with rust install (git@suyogtandel.in)
