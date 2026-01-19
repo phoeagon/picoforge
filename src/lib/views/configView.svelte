@@ -15,6 +15,7 @@
   import { Microchip, RefreshCw, Save, Settings, Tag, TriangleAlert, X, Key } from "@lucide/svelte";
 
   import { configViewState as state } from "$lib/state/configState.svelte";
+  import NoDeviceStatus from "$lib/components/device/NoDeviceStatus.svelte";
 </script>
 
 <div class="space-y-6">
@@ -24,11 +25,7 @@
   </div>
 
   {#if !device.connected}
-    <Alert.Root>
-      <TriangleAlert class="h-4 w-4" />
-      <Alert.Title>No Device Connected</Alert.Title>
-      <Alert.Description>Connect your device to access configuration options.</Alert.Description>
-    </Alert.Root>
+    <NoDeviceStatus message="Connect your device to access configuration options." />
   {:else}
     <div class="grid gap-6 lg:grid-cols-2">
       <Card.Root class="lg:col-span-2">

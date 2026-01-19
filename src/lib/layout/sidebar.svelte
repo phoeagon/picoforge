@@ -2,7 +2,19 @@
   import { onMount } from "svelte";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
-  import { Home, Info, KeyRound, Maximize, Minimize, Minus, RefreshCw, ScrollText, Settings, ShieldCheck, X } from "@lucide/svelte";
+  import {
+    Home,
+    Info,
+    KeyRound,
+    Maximize,
+    Minimize,
+    Minus,
+    RefreshCw,
+    ScrollText,
+    Settings,
+    ShieldCheck,
+    X,
+  } from "@lucide/svelte";
   import type { Component } from "svelte";
 
   import { Button } from "$lib/components/ui/button";
@@ -52,10 +64,10 @@
         isMaximized = maximized;
       });
     };
-    
+
     handleResize();
     window.addEventListener("resize", handleResize);
-    
+
     return () => {
       window.removeEventListener("resize", handleResize);
     };
@@ -66,8 +78,15 @@
   <Sidebar.Root collapsible="icon">
     <Sidebar.Header>
       <div class="flex items-center gap-3 p-2">
-        <img src="/in.suyogtandel.picoforge.svg" alt="PicoForge Logo" class="h-12 w-12 shadow-sm" />
-        <span class="font-bold text-xl tracking-tight group-data-[collapsible=icon]:hidden">PicoForge</span>
+        <img
+          src="/in.suyogtandel.picoforge.svg"
+          alt="PicoForge Logo"
+          class="h-12 w-12 shadow-sm"
+        />
+        <span
+          class="font-bold text-xl tracking-tight group-data-[collapsible=icon]:hidden"
+          >PicoForge</span
+        >
       </div>
     </Sidebar.Header>
 
@@ -78,7 +97,10 @@
           <Sidebar.Menu>
             {#each menuItems as item}
               <Sidebar.MenuItem>
-                <Sidebar.MenuButton isActive={currentView === item.view} onclick={() => onViewChange(item.view)}>
+                <Sidebar.MenuButton
+                  isActive={currentView === item.view}
+                  onclick={() => onViewChange(item.view)}
+                >
                   <item.icon />
                   <span>{item.label}</span>
                 </Sidebar.MenuButton>
@@ -89,18 +111,40 @@
       </Sidebar.Group>
     </Sidebar.Content>
 
-    <Sidebar.Footer class="border-t bg-background/50 p-2 group-data-[collapsible=icon]:p-2">
+    <Sidebar.Footer
+      class="border-t bg-background/50 p-2 group-data-[collapsible=icon]:p-2"
+    >
       <div class="p-2 space-y-3 group-data-[collapsible=icon]:hidden">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-muted-foreground">Device Status</span>
+          <span class="text-xs font-medium text-muted-foreground"
+            >Device Status</span
+          >
           {#if device.connected}
-            <Badge variant="default" class="bg-green-600 hover:bg-green-600 text-[10px] px-1.5 h-5">Online</Badge>
+            <Badge
+              variant="default"
+              class="bg-green-600 hover:bg-green-600 text-[10px] px-1.5 h-5"
+              >Online</Badge
+            >
+          {:else if device.error}
+            <Badge
+              variant="destructive"
+              class="bg-amber-600 hover:bg-amber-600 text-[10px] px-1.5 h-5"
+              >Error</Badge
+            >
           {:else}
-            <Badge variant="destructive" class="text-[10px] px-1.5 h-5">Offline</Badge>
+            <Badge variant="destructive" class="text-[10px] px-1.5 h-5"
+              >Offline</Badge
+            >
           {/if}
         </div>
 
-        <Button variant="outline" size="sm" class="w-full gap-2" disabled={device.loading} onclick={() => device.refresh()}>
+        <Button
+          variant="outline"
+          size="sm"
+          class="w-full gap-2"
+          disabled={device.loading}
+          onclick={() => device.refresh()}
+        >
           {#if device.loading}
             <RefreshCw class="h-3.5 w-3.5 animate-spin" />
           {:else}
@@ -109,28 +153,52 @@
           Refresh
         </Button>
       </div>
-      <div class="hidden group-data-[collapsible=icon]:flex flex-col items-center justify-center p-2 gap-2">
-        <Button variant="ghost" size="icon" disabled={device.loading} onclick={() => device.refresh()}>
+      <div
+        class="hidden group-data-[collapsible=icon]:flex flex-col items-center justify-center p-2 gap-2"
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={device.loading}
+          onclick={() => device.refresh()}
+        >
           <RefreshCw class="h-4 w-4 {device.loading ? 'animate-spin' : ''}" />
         </Button>
-        <div class={`h-2 w-2 rounded-full ${device.connected ? "bg-green-500" : "bg-red-500"}`}></div>
+        <div
+          class={`h-2 w-2 rounded-full ${device.connected ? "bg-green-500" : device.error ? "bg-amber-500" : "bg-red-500"}`}
+        ></div>
       </div>
     </Sidebar.Footer>
   </Sidebar.Root>
 
   <Sidebar.Inset>
-    <header data-tauri-drag-region class="h-10 bg-background border-b flex items-center justify-between px-2 select-none sticky top-0 z-10">
+    <header
+      data-tauri-drag-region
+      class="h-10 bg-background border-b flex items-center justify-between px-2 select-none sticky top-0 z-10"
+    >
       <div class="flex items-center gap-2">
         <Sidebar.Trigger class="h-8 w-8" />
-        <div class="text-xs font-medium text-muted-foreground pointer-events-none flex items-center gap-2"></div>
+        <div
+          class="text-xs font-medium text-muted-foreground pointer-events-none flex items-center gap-2"
+        ></div>
       </div>
 
       <div class="flex items-center gap-1">
-        <Button variant="ghost" size="icon" class="h-8 w-8 hover:bg-muted" onclick={minimize}>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-8 w-8 hover:bg-muted"
+          onclick={minimize}
+        >
           <Minus class="h-4 w-4" />
         </Button>
 
-        <Button variant="ghost" size="icon" class="h-8 w-8 hover:bg-muted" onclick={toggleMaximize}>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-8 w-8 hover:bg-muted"
+          onclick={toggleMaximize}
+        >
           {#if isMaximized}
             <Minimize class="h-3.5 w-3.5 rotate-180" />
           {:else}

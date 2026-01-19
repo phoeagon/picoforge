@@ -12,7 +12,10 @@ use std::io::Cursor;
 
 /// Connects to the first available reader and selects the Rescue Applet
 fn connect_and_select() -> Result<(pcsc::Card, Vec<u8>), PFError> {
-	let ctx = Context::establish(Scope::User)?;
+	let ctx = Context::establish(Scope::User).map_err(|e| {
+		log::error!("Failed to establish PCSC context: {}", e);
+		PFError::Pcsc(e)
+	})?;
 
 	let mut readers_buf = [0; 2048];
 	let mut readers = ctx.list_readers(&mut readers_buf)?;

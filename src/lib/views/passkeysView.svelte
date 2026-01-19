@@ -12,6 +12,7 @@
   import { TriangleAlert, KeyRound, Trash2, Lock, Unlock, Loader2, Shield } from "@lucide/svelte";
   import { device } from "$lib/device/manager.svelte";
   import type { StoredCredential } from "$lib/device/types.svelte";
+  import NoDeviceStatus from "$lib/components/device/NoDeviceStatus.svelte";
 
   let loading = $state(false);
   let pin = $state("");
@@ -108,11 +109,7 @@
   </div>
 
   {#if !device.connected}
-    <Alert.Root>
-      <TriangleAlert class="h-4 w-4" />
-      <Alert.Title>No Device Connected</Alert.Title>
-      <Alert.Description>Connect your pico-key to manage passkeys.</Alert.Description>
-    </Alert.Root>
+    <NoDeviceStatus message="Connect your pico-key to manage passkeys." />
   {:else}
     <Dialog.Root bind:open={showPinDialog}>
       <Dialog.Content class="sm:max-w-md">

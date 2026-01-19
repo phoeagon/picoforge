@@ -8,6 +8,7 @@
   import { device } from "$lib/device/manager.svelte";
 
   import { Cpu, Lock, LockOpen, Microchip, ShieldCheck, TriangleAlert, Shield } from "@lucide/svelte";
+  import NoDeviceStatus from "$lib/components/device/NoDeviceStatus.svelte";
 </script>
 
 <div class="space-y-6">
@@ -17,11 +18,7 @@
   </div>
 
   {#if !device.connected}
-    <Alert.Root>
-      <TriangleAlert class="h-4 w-4" />
-      <Alert.Title>No Device Connected</Alert.Title>
-      <Alert.Description>Please connect your device and click Refresh to begin.</Alert.Description>
-    </Alert.Root>
+    <NoDeviceStatus />
   {:else}
     <div class="grid gap-6 md:grid-cols-2">
       <Card.Root>

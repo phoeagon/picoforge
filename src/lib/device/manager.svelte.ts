@@ -15,6 +15,7 @@ class DeviceManager {
   loading = $state(false);
   connected = $state(false);
   fidoInfo: FidoInfo | null = $state(null);
+  error: string | null = $state(null);
 
   credentials: StoredCredential[] = $state([]);
   unlocked = $state(false);
@@ -38,6 +39,7 @@ class DeviceManager {
 
   async refresh() {
     this.loading = true;
+    this.error = null;
     try {
       logger.add("Attempting to connect to device...", "info");
 
@@ -66,10 +68,13 @@ class DeviceManager {
         logger.add(`Device Connected! Serial: ${this.info.serial}, FW: v${this.info.firmwareVersion}`, "success");
       }
       this.connected = true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Connection failed:", err);
+      this.error = err;
       if (this.connected) {
         logger.add(`Connection lost: ${err}`, "error");
+      } else {
+        logger.add(`Connection failed: ${err}`, "error");
       }
       this.connected = false;
     } finally {
