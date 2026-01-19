@@ -70,13 +70,23 @@ class DeviceManager {
       this.connected = true;
     } catch (err: any) {
       console.error("Connection failed:", err);
-      this.error = err;
-      if (this.connected) {
-        logger.add(`Connection lost: ${err}`, "error");
+
+      // Handle structured error from Rust (PFError)
+      if (err && typeof err === "object" && err.type === "NoDevice") {
+        this.error = null;
+        this.connected = false;
+        // Don't log "No device" as an error to the user log system, 
+        // it's a normal state when nothing is plugged in.
       } else {
-        logger.add(`Connection failed: ${err}`, "error");
+        const msg = typeof err === "string" ? err : err.message || JSON.stringify(err);
+        this.error = msg;
+        if (this.connected) {
+          logger.add(`Connection lost: ${msg}`, "error");
+        } else {
+          logger.add(`Connection failed: ${msg}`, "error");
+        }
+        this.connected = false;
       }
-      this.connected = false;
     } finally {
       this.loading = false;
     }

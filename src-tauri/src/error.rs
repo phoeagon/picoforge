@@ -1,6 +1,8 @@
 /// Custom error types for Pico Forge application.
 #[derive(Debug, thiserror::Error)]
 pub enum PFError {
+	#[error("No device found")]
+	NoDevice,
 	#[error("PCSC Error: {0}")]
 	Pcsc(#[from] pcsc::Error),
 	#[error("IO/Hex Error: {0}")]
@@ -15,7 +17,27 @@ impl serde::Serialize for PFError {
 	where
 		S: serde::Serializer,
 	{
-		serializer.serialize_str(&self.to_string())
+		use serde::ser::SerializeStruct;
+		let mut state = serializer.serialize_struct("PFError", 2)?;
+		match self {
+			PFError::NoDevice => {
+				state.serialize_field("type", "NoDevice")?;
+				state.serialize_field("message", "No device found")?;
+			}
+			PFError::Pcsc(err) => {
+				state.serialize_field("type", "Pcsc")?;
+				state.serialize_field("message", &err.to_string())?;
+			}
+			PFError::Io(msg) => {
+				state.serialize_field("type", "Io")?;
+				state.serialize_field("message", msg)?;
+			}
+			PFError::Device(msg) => {
+				state.serialize_field("type", "Device")?;
+				state.serialize_field("message", msg)?;
+			}
+		}
+		state.end()
 	}
 }
 

@@ -22,8 +22,8 @@ fn connect_and_select() -> Result<(pcsc::Card, Vec<u8>), PFError> {
 
 	// Use the first reader found
 	let reader = readers.next().ok_or_else(|| {
-		log::error!("No Smart Card Reader found");
-		PFError::Device("No Smart Card Reader found.".into())
+		log::info!("No Smart Card Reader found");
+		PFError::NoDevice
 	})?;
 
 	let card = ctx.connect(reader, ShareMode::Shared, Protocols::ANY)?;
