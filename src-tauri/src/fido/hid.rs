@@ -439,15 +439,27 @@ impl HidTransport {
 		payload.extend(config_payload_cbor);
 
 		// Send via HID
-		self.send_cbor(CTAPHID_CBOR, &payload).map_err(|e| {
-			log::error!("Failed to send setMinPINLength config: {}", e);
-			PFError::Device(format!("setMinPINLength failed: {}", e))
-		})?;
+		match self.send_cbor(CTAPHID_CBOR, &payload) {
+			Ok(_) => {
+				log::info!(
+					"Successfully set minimum PIN length to {}",
+					new_min_pin_length
+				);
+				Ok(())
+			}
+			Err(e) => {
+				let err_str = e.to_string();
+				log::error!("Failed to send setMinPINLength config: {}", err_str);
 
-		log::info!(
-			"Successfully set minimum PIN length to {}",
-			new_min_pin_length
-		);
-		Ok(())
+				// Check for PIN policy violation (0x37) - cannot decrease min PIN length
+				if err_str.contains("0x37") {
+					return Err(PFError::Device(
+						"Cannot decrease minimum PIN length. The FIDO2 security policy only allows increasing the minimum PIN length, not decreasing it. A device reset is required to lower the minimum.".into()
+					));
+				}
+
+				Err(PFError::Device(format!("setMinPINLength failed: {}", e)))
+			}
+		}
 	}
 }
