@@ -175,6 +175,18 @@ Alternatively, you can enter a developement environement with all the required d
 nix develop github:librekeys/picoforge
 ```
 
+Or use the shell.nix file that is at the root of the repository:
+
+```bash
+nix-shell
+```
+
+Then you can build from source and run the application with:
+
+```bash
+deno task tauri dev
+```
+
 ## Project Structure
 
 ```
