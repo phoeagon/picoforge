@@ -1,7 +1,7 @@
 use rand::Rng;
 use serde_cbor_2::{Value, to_vec};
 use std::collections::BTreeMap;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use crate::error::PFError;
 use crate::fido::constants::*;

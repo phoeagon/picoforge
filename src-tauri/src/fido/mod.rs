@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 pub mod constants;
 pub mod hid;
 
@@ -12,22 +10,27 @@ use crate::{
 use constants::*;
 use ctap_hid_fido2::{
 	Cfg, FidoKeyHidFactory,
-	fidokey::make_credential::{MakeCredentialArgs, MakeCredentialArgsBuilder},
+	fidokey::{FidoKeyHid, pin::Permission},
 	public_key_credential_descriptor::PublicKeyCredentialDescriptor,
-	public_key_credential_user_entity::PublicKeyCredentialUserEntity,
 };
 use hid::*;
-use rand::Rng;
 use serde_cbor_2::{Value, from_slice, to_vec};
 use std::collections::{BTreeMap, HashMap};
 
 // Fido functions that require pin: ( Uses ctap_hid_fido2 crate)
 
-pub(crate) fn get_fido_info() -> Result<FidoDeviceInfo, String> {
+fn get_device() -> Result<FidoKeyHid, String> {
 	let cfg = Cfg::init();
+	FidoKeyHidFactory::create(&cfg).map_err(|e| {
+		format!(
+			"Could not connect to FIDO device. Is it plugged in? Error: {:?}",
+			e
+		)
+	})
+}
 
-	let device = FidoKeyHidFactory::create(&cfg)
-		.map_err(|_| "Could not connect to FIDO device. Is it plugged in?".to_string())?;
+pub(crate) fn get_fido_info() -> Result<FidoDeviceInfo, String> {
+	let device = get_device()?;
 
 	let info = device
 		.get_info()
@@ -55,9 +58,7 @@ pub(crate) fn change_fido_pin(
 	current_pin: Option<String>,
 	new_pin: String,
 ) -> Result<String, String> {
-	let cfg = Cfg::init();
-	let device = FidoKeyHidFactory::create(&cfg)
-		.map_err(|e| format!("Failed to connect to FIDO device: {:?}", e))?;
+	let device = get_device()?;
 
 	match current_pin {
 		Some(old) => {
@@ -83,11 +84,8 @@ pub(crate) fn set_min_pin_length(
 
 	// 1. Obtain PIN token using the library handle
 	let pin_token = {
-		let cfg = Cfg::init();
-		let device = FidoKeyHidFactory::create(&cfg)
-			.map_err(|e| format!("Could not connect to FIDO device: {:?}", e))?;
+		let device = get_device()?;
 
-		use ctap_hid_fido2::fidokey::pin::Permission;
 		// Obtain a token with AuthenticatorConfiguration permission (CTAP 2.1)
 		match device.get_pinuv_auth_token_with_permission(
 			&current_pin,
@@ -120,9 +118,7 @@ pub(crate) fn set_min_pin_length(
 }
 
 pub(crate) fn get_credentials(pin: String) -> Result<Vec<StoredCredential>, String> {
-	let cfg = Cfg::init();
-	let device = FidoKeyHidFactory::create(&cfg)
-		.map_err(|e| format!("Failed to connect to FIDO device: {:?}", e))?;
+	let device = get_device()?;
 
 	let rps = match device.credential_management_enumerate_rps(Some(&pin)) {
 		Ok(rps) => rps,
@@ -165,9 +161,7 @@ pub(crate) fn get_credentials(pin: String) -> Result<Vec<StoredCredential>, Stri
 }
 
 pub(crate) fn delete_credential(pin: String, credential_id_hex: String) -> Result<String, String> {
-	let cfg = Cfg::init();
-	let device = FidoKeyHidFactory::create(&cfg)
-		.map_err(|e| format!("Failed to connect to FIDO device: {:?}", e))?;
+	let device = get_device()?;
 
 	let cred_id_bytes = hex::decode(&credential_id_hex)
 		.map_err(|_| "Invalid Credential ID Hex string".to_string())?;
@@ -198,7 +192,40 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
 		}
 	})?;
 
-	// --- 1. Get Info ---
+	let (aaguid_str, fw_version) = read_device_info(&transport)?;
+
+	log::info!(
+		"Device identified: AAGUID={}, FW={}",
+		aaguid_str,
+		fw_version
+	);
+
+	let (used, total) = read_memory_stats(&transport)?;
+	log::debug!(
+		"Memory Stats: Used={}KB, Total={}KB",
+		used / 1024,
+		total / 1024
+	);
+
+	let config = read_physical_config(&transport)?;
+
+	log::info!("Successfully read all device details.");
+
+	Ok(FullDeviceStatus {
+		info: DeviceInfo {
+			serial: "?".to_string(), // Serial number is not available through fido
+			flash_used: used / 1024,
+			flash_total: total / 1024,
+			firmware_version: fw_version,
+		},
+		config,
+		secure_boot: false,
+		secure_lock: false,
+		method: "FIDO".to_string(),
+	})
+}
+
+fn read_device_info(transport: &HidTransport) -> Result<(String, String), PFError> {
 	log::debug!("Sending GetInfo command (0x04)...");
 	let info_payload = [CtapCommand::GetInfo as u8];
 	let info_res = transport
@@ -250,16 +277,12 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
 		"Unknown".into()
 	};
 
-	log::info!(
-		"Device identified: AAGUID={}, FW={}",
-		aaguid_str,
-		fw_version
-	);
+	Ok((aaguid_str, fw_version))
+}
 
-	// --- 2. Get Memory Stats ---
+fn read_memory_stats(transport: &HidTransport) -> Result<(u32, u32), PFError> {
 	log::debug!("Preparing Memory Stats vendor command...");
 
-	// FIX: The CBOR map should only contain the arguments ({1: 1}), not the command category.
 	let mut mem_req = BTreeMap::new();
 	mem_req.insert(
 		Value::Integer(1), // Sub-command key (usually 1)
@@ -271,24 +294,22 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
 		PFError::Io(format!("CBOR encode error: {}", e))
 	})?;
 
-	// FIX: Prepend the Vendor Command ID (0x06 for Memory) to the payload
-	// The firmware expects: [VendorCmdByte] [CBOR Map]
 	let mut mem_payload = vec![VendorCommand::Memory as u8];
 	mem_payload.extend(mem_cbor);
 
 	log::debug!("Sending Memory Stats command...");
 	let mem_res = transport
 		.send_cbor(CTAP_VENDOR_CBOR_CMD, &mem_payload)
-		.unwrap_or_else(|e| {
+		.map_err(|e| {
 			log::warn!("Failed to fetch memory stats (Vendor Cmd): {}", e);
-			Vec::new()
-		});
+			PFError::Device(format!("Failed to fetch memory stats: {}", e))
+		})?;
 
 	let mem_map: BTreeMap<i128, i128> = if !mem_res.is_empty() {
-		from_slice(&mem_res).unwrap_or_else(|e| {
+		from_slice(&mem_res).map_err(|e| {
 			log::error!("Failed to parse Memory Stats CBOR response: {}", e);
-			BTreeMap::new()
-		})
+			PFError::Io(format!("Failed to parse Memory Stats CBOR: {}", e))
+		})?
 	} else {
 		BTreeMap::new()
 	};
@@ -302,13 +323,10 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
 		.cloned()
 		.unwrap_or(0) as u32;
 
-	log::debug!(
-		"Memory Stats: Used={}KB, Total={}KB",
-		used / 1024,
-		total / 1024
-	);
+	Ok((used, total))
+}
 
-	// --- 3. Get Physical Config ---
+fn read_physical_config(transport: &HidTransport) -> Result<AppConfig, PFError> {
 	log::debug!("Preparing Physical Config vendor command...");
 
 	// FIX: Only arguments in CBOR map
@@ -318,18 +336,11 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
 		Value::Integer(PhysicalOptionsSubCommand::GetOptions as i128),
 	);
 
-	// Note: The previous code nested this inside another map with key 2.
-	// Based on cbor_vendor.c, we usually just send the sub-command params directly
-	// or wrapped depending on the specific vendor command logic.
-	// For 'PhysicalOptions', looking at cbor_vendor.c, it expects a map where key 1 is subcommand.
-	// So the map we built above `phy_params` ( {1: GetOptions} ) is correct as the top-level CBOR.
-
 	let phy_cbor = to_vec(&Value::Map(phy_params)).map_err(|e| {
 		log::error!("Failed to encode Physical Config CBOR: {}", e);
 		PFError::Io(format!("CBOR encode error: {}", e))
 	})?;
 
-	// FIX: Prepend Vendor Command ID (0x05 for PhysicalOptions)
 	let mut phy_payload = vec![VendorCommand::PhysicalOptions as u8];
 	phy_payload.extend(phy_cbor);
 
@@ -350,8 +361,6 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
 
 	if let Ok(Value::Map(m)) = from_slice(&phy_res) {
 		log::debug!("Parsed Physical Config map successfully");
-		// These keys might need adjustment based on exact firmware response structure
-		// usually they are integer keys in CBOR, but if your firmware returns text keys:
 		if let Some(Value::Integer(v)) = m.get(&Value::Text("gpio".into())) {
 			config.led_gpio = *v as u8;
 		}
@@ -362,20 +371,7 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
 		log::warn!("Physical config response was not a valid CBOR map or empty");
 	}
 
-	log::info!("Successfully read all device details.");
-
-	Ok(FullDeviceStatus {
-		info: DeviceInfo {
-			serial: "?".to_string(), // Serial number is not available through fido. Previous code was using AAGUID as serial but it is too long to display in place of serial it is already displayed somewhere else.
-			flash_used: used / 1024,
-			flash_total: total / 1024,
-			firmware_version: fw_version,
-		},
-		config,
-		secure_boot: false,
-		secure_lock: false,
-		method: "FIDO".to_string(),
-	})
+	Ok(config)
 }
 
 pub fn write_config(config: AppConfigInput, pin: Option<String>) -> Result<String, PFError> {
@@ -392,11 +388,8 @@ pub fn write_config(config: AppConfigInput, pin: Option<String>) -> Result<Strin
 
 	// 1. Obtain PIN token using the library handle
 	let pin_token = {
-		let cfg = Cfg::init();
-		let device = FidoKeyHidFactory::create(&cfg)
-			.map_err(|e| PFError::Device(format!("Could not connect to FIDO device: {:?}", e)))?;
+		let device = get_device().map_err(|e| PFError::Device(e))?;
 
-		use ctap_hid_fido2::fidokey::pin::Permission;
 		// Try to obtain a token with AuthenticatorConfiguration permission (CTAP 2.1)
 		match device
 			.get_pinuv_auth_token_with_permission(pin_val, Permission::AuthenticatorConfiguration)
@@ -471,16 +464,13 @@ pub fn write_config(config: AppConfigInput, pin: Option<String>) -> Result<Strin
 	}
 	// Touch_timeout config
 	if let Some(timeout) = config.touch_timeout {
-		// In the firmware's phy_data, touch_timeout is often part of opts or separate.
-		// Looking at the previous code, it was separate (0x08).
-		// However, in vendor configuration, we usually send parameters individually.
 		transport
 			.send_vendor_config(
 				&pin_token,
-				VendorConfigCommand::PhysicalOptions, // Assuming there's a command for it or it's in opts
-				Value::Integer(timeout as i128),      // Wait, let's check VendorConfigCommand again
+				VendorConfigCommand::PhysicalOptions,
+				Value::Integer(timeout as i128),
 			)
-			.ok(); // If it fails, maybe it's not supported as a standalone vendor cmd
+			.ok();
 	}
 
 	transport.send_vendor_config(
