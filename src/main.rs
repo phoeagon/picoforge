@@ -49,8 +49,8 @@ fn main() {
                 window_decorations: Some(gpui::WindowDecorations::Client),
 
                 window_min_size: Some(gpui::Size {
-                    width: px(650.),
-                    height: px(400.),
+                    width: px(450.),
+                    height: px(200.),
                 }),
                 kind: WindowKind::Normal,
                 ..Default::default()

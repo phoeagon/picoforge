@@ -1,4 +1,5 @@
-use crate::device::types::{DeviceMethod, FullDeviceStatus};
+use crate::device::types::FullDeviceStatus;
+use crate::ui::components::sidebar::{ActiveView, AppSidebar};
 use crate::ui::{
     colors,
     views::{
@@ -8,23 +9,12 @@ use crate::ui::{
 };
 use gpui::*;
 use gpui_component::{
-    ActiveTheme, Icon, IconName, Side, TitleBar,
+    ActiveTheme, IconName, TitleBar,
     button::{Button, ButtonVariants},
     h_flex,
     scroll::ScrollableElement,
-    sidebar::*,
     v_flex,
 };
-
-#[derive(Clone, Copy, PartialEq)]
-enum ActiveView {
-    Home,
-    Passkeys,
-    Configuration,
-    Security,
-    Logs,
-    About,
-}
 
 pub struct ApplicationRoot {
     active_view: ActiveView,
@@ -65,11 +55,6 @@ impl ApplicationRoot {
 
 impl Render for ApplicationRoot {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let device_status = self.device_status.clone();
-
-        let device_error = self.device_error.clone();
-        let collapsed = self.collapsed;
-
         let target_width = if self.collapsed { px(48.) } else { px(255.) };
         if (self.sidebar_width - target_width).abs() > px(0.1) {
             self.sidebar_width = self.sidebar_width + (target_width - self.sidebar_width) * 0.2;
@@ -78,276 +63,72 @@ impl Render for ApplicationRoot {
             self.sidebar_width = target_width;
         }
 
-        h_flex()
-            .size_full()
-            .child(
-                v_flex()
-                    .h_full()
-                    .bg(rgb(colors::zinc::ZINC900))
-                    .w(self.sidebar_width)
-                    .child({
-                        let header = h_flex()
-                            .w_full()
-                            .items_center()
-                            .bg(rgb(colors::zinc::ZINC900))
-                            .border_r_1()
-                            .border_color(cx.theme().sidebar_border)
-                            .pt_4();
-
-                        let current_width = self.sidebar_width;
-                        let t = ((current_width - px(48.)) / (px(255.) - px(48.))).clamp(0.0, 1.0);
-
-                        // Animate padding-left from 8px (collapsed) to 16px (expanded)
-                        let padding_left = px(8.) + (px(16.) - px(8.)) * t;
-
-                        let header = header.justify_start().pl(padding_left);
-
-                        // Icon Animation: Stays 48px until width drops below 120px, then shrinks to 32px
-                        // Range: [48px ... 120px] -> [32px ... 48px]
-                        let width_icon_start = px(120.);
-                        let t_icon = ((current_width - px(48.)) / (width_icon_start - px(48.)))
-                            .clamp(0.0, 1.0);
-                        let icon_size = px(32.) + (px(48.) - px(32.)) * t_icon;
-
-                        // Text Animation: Fades out first, before icon starts shrinking
-                        // Range: [200px ... 255px] -> [0.0 ... 1.0]
-                        let width_text_start = px(200.);
-                        let text_opacity: f32 = if current_width > width_text_start {
-                            ((current_width - width_text_start) / (px(255.) - width_text_start))
-                                .clamp(0.0, 1.0)
-                        } else {
-                            0.0
-                        };
-
-                        header
-                            .child(
-                                img("appIcons/in.suyogtandel.picoforge.svg")
-                                    .w(icon_size)
-                                    .h(icon_size)
-                                    .flex_shrink_0(),
-                            )
-                            .children(if self.sidebar_width > px(60.) {
-                                Some(
-                                    div()
-                                        .ml_2()
-                                        .opacity(text_opacity)
-                                        .child("PicoForge")
-                                        .font_weight(gpui::FontWeight::EXTRA_BOLD)
-                                        .text_color(rgb(colors::zinc::ZINC100)),
-                                )
-                            } else {
-                                None
-                            })
+        div().size_full().overflow_hidden().child(
+            h_flex()
+                .size_full()
+                .child(
+                    AppSidebar::new(
+                        self.active_view,
+                        self.sidebar_width,
+                        self.collapsed,
+                        self.device_status.clone(),
+                        self.device_error.clone(),
+                    )
+                    .on_select(|this: &mut Self, view, _, _| {
+                        this.active_view = view;
                     })
-                    .child(
-                        Sidebar::new(Side::Left)
-                            .collapsed(self.sidebar_width < px(120.))
-                            .collapsible(false)
-                            .h_auto()
-                            .w_full()
-                            .flex_grow()
-                            .bg(rgb(colors::zinc::ZINC900))
-                            .child(
-                                SidebarGroup::new("Menu").child(
-                                    SidebarMenu::new()
-                                        .child(
-                                            SidebarMenuItem::new("Home")
-                                                .icon(Icon::default().path("icons/house.svg"))
-                                                .active(self.active_view == ActiveView::Home)
-                                                .on_click(cx.listener(|this, _, _, _| {
-                                                    this.active_view = ActiveView::Home;
-                                                })),
-                                        )
-                                        .child(
-                                            SidebarMenuItem::new("Passkeys")
-                                                .icon(Icon::default().path("icons/key-round.svg"))
-                                                .active(self.active_view == ActiveView::Passkeys)
-                                                .on_click(cx.listener(|this, _, _, _| {
-                                                    this.active_view = ActiveView::Passkeys;
-                                                })),
-                                        )
-                                        .child(
-                                            SidebarMenuItem::new("Configuration")
-                                                .icon(Icon::default().path("icons/settings.svg"))
-                                                .active(
-                                                    self.active_view == ActiveView::Configuration,
-                                                )
-                                                .on_click(cx.listener(|this, _, _, _| {
-                                                    this.active_view = ActiveView::Configuration;
-                                                })),
-                                        )
-                                        .child(
-                                            SidebarMenuItem::new("Security")
-                                                .icon(
-                                                    Icon::default().path("icons/shield-check.svg"),
-                                                )
-                                                .active(self.active_view == ActiveView::Security)
-                                                .on_click(cx.listener(|this, _, _, _| {
-                                                    this.active_view = ActiveView::Security;
-                                                })),
-                                        )
-                                        .child(
-                                            SidebarMenuItem::new("Logs")
-                                                .icon(Icon::default().path("icons/scroll-text.svg"))
-                                                .active(self.active_view == ActiveView::Logs)
-                                                .on_click(cx.listener(|this, _, _, _| {
-                                                    this.active_view = ActiveView::Logs;
-                                                })),
-                                        )
-                                        .child(
-                                            SidebarMenuItem::new("About")
-                                                .icon(IconName::Info)
-                                                .active(self.active_view == ActiveView::About)
-                                                .on_click(cx.listener(|this, _, _, _| {
-                                                    this.active_view = ActiveView::About;
-                                                })),
-                                        ),
-                                ),
-                            ),
-                    )
-                    .child(
-                        v_flex()
-                            .w_full()
-                            .bg(rgb(0x111113))
-                            .border_r_1()
-                            .border_color(cx.theme().sidebar_border)
-                            .p_2()
-                            .gap_3()
-                            .child(if collapsed {
-                                // Collapsed View
-                                v_flex()
+                    .on_refresh(|this: &mut Self, _, cx| {
+                        this.refresh_device_status(cx);
+                    })
+                    .render(cx),
+                )
+                .child(
+                    v_flex()
+                        .size_full()
+                        .child(
+                            TitleBar::new().bg(rgba(colors::zinc::ZINC950)).child(
+                                h_flex()
+                                    .w_full()
+                                    .justify_between()
+                                    .bg(rgba(colors::zinc::ZINC950))
                                     .items_center()
-                                    .justify_center()
-                                    .gap_2()
+                                    .cursor(gpui::CursorStyle::OpenHand)
                                     .child(
-                                        Button::new("refresh-btn-collapsed")
+                                        Button::new("sidebar_toggle")
                                             .ghost()
-                                            .child(Icon::default().path("icons/refresh-cw.svg"))
-                                            .on_click(cx.listener(|this, _, _, cx| {
-                                                this.refresh_device_status(cx);
-                                            })),
-                                    )
-                                    .child(div().w(px(8.)).h(px(8.)).rounded_full().bg(
-                                        if let Some(status) = &device_status {
-                                            if status.method == DeviceMethod::Fido {
-                                                rgb(0xf59e0b)
-                                            } else {
-                                                rgb(0x22c55e)
-                                            }
-                                        } else if device_error.is_some() {
-                                            rgb(0xf59e0b)
-                                        } else {
-                                            rgb(0xef4444)
-                                        },
-                                    ))
-                            } else {
-                                // Expanded View
-                                v_flex()
-                                    .gap_3()
-                                    .child(
-                                        h_flex()
-                                            .items_center()
-                                            .justify_between()
-                                            .child(
-                                                div()
-                                                    .text_size(px(12.))
-                                                    .font_weight(gpui::FontWeight::MEDIUM)
-                                                    .text_color(cx.theme().muted_foreground)
-                                                    .child("Device Status"),
-                                            )
-                                            .child({
-                                                let (text, color_bg, color_text) =
-                                                    if let Some(status) = &device_status {
-                                                        if status.method == DeviceMethod::Fido {
-                                                            (
-                                                                "Online - Fido",
-                                                                rgb(0xf59e0b),
-                                                                rgb(0xffffff),
-                                                            )
-                                                        } else {
-                                                            ("Online", rgb(0x16a34a), rgb(0xffffff))
-                                                        }
-                                                    } else if device_error.is_some() {
-                                                        ("Error", rgb(0xd97706), rgb(0xffffff))
-                                                    } else {
-                                                        ("Offline", rgb(0xef4444), rgb(0xffffff))
-                                                    };
-
-                                                div()
-                                                    .px(px(6.))
-                                                    .h(px(20.))
-                                                    .flex()
-                                                    .items_center()
-                                                    .rounded(px(10.))
-                                                    .bg(color_bg)
-                                                    .child(
-                                                        div()
-                                                            .text_size(px(10.))
-                                                            .font_weight(gpui::FontWeight::BOLD)
-                                                            .text_color(color_text)
-                                                            .child(text),
-                                                    )
-                                            }),
-                                    )
-                                    .child(
-                                        Button::new("refresh-btn")
-                                            .outline()
-                                            .w_full()
-                                            .child(
-                                                h_flex()
-                                                    .gap_2()
-                                                    .justify_center()
-                                                    .child(
-                                                        Icon::default()
-                                                            .path("icons/refresh-cw.svg"),
-                                                    )
-                                                    .child("Refresh"),
-                                            )
-                                            .on_click(cx.listener(|this, _, _, cx| {
-                                                this.refresh_device_status(cx);
-                                            })),
-                                    )
-                            }),
-                    ),
-            )
-            .child(
-                v_flex()
-                    .size_full()
-                    .child(
-                        TitleBar::new().bg(rgba(colors::zinc::ZINC950)).child(
-                            h_flex()
-                                .w_full()
-                                .justify_between()
-                                .bg(rgba(colors::zinc::ZINC950))
-                                .items_center()
-                                .cursor(gpui::CursorStyle::OpenHand)
-                                .child(
-                                    Button::new("sidebar_toggle")
-                                        .ghost()
-                                        .icon(IconName::PanelLeft)
-                                        .on_click(cx.listener(|this, _, _, _| {
-                                            this.collapsed = !this.collapsed;
-                                        }))
-                                        .tooltip("Toggle Sidebar"),
-                                ),
+                                            .icon(IconName::PanelLeft)
+                                            .on_click(cx.listener(|this, _, _, _| {
+                                                this.collapsed = !this.collapsed;
+                                            }))
+                                            .tooltip("Toggle Sidebar"),
+                                    ),
+                            ),
+                        )
+                        .child(
+                            v_flex()
+                                .min_h(px(0.))
+                                .min_w(px(0.))
+                                .overflow_y_scrollbar()
+                                .flex_grow()
+                                .bg(cx.theme().background)
+                                .child(match self.active_view {
+                                    ActiveView::Home => {
+                                        HomeView::build(cx.theme()).into_any_element()
+                                    }
+                                    ActiveView::Passkeys => {
+                                        PasskeysView::build().into_any_element()
+                                    }
+                                    ActiveView::Configuration => {
+                                        ConfigView::build().into_any_element()
+                                    }
+                                    ActiveView::Security => {
+                                        SecurityView::build().into_any_element()
+                                    }
+                                    ActiveView::Logs => LogsView::build().into_any_element(),
+                                    ActiveView::About => AboutView::build().into_any_element(),
+                                }),
                         ),
-                    )
-                    .child(
-                        v_flex()
-                            .min_h(px(0.))
-                            .min_w(px(0.))
-                            .overflow_y_scrollbar()
-                            .flex_grow()
-                            .bg(cx.theme().background)
-                            .child(match self.active_view {
-                                ActiveView::Home => HomeView::build(cx.theme()).into_any_element(),
-                                ActiveView::Passkeys => PasskeysView::build().into_any_element(),
-                                ActiveView::Configuration => ConfigView::build().into_any_element(),
-                                ActiveView::Security => SecurityView::build().into_any_element(),
-                                ActiveView::Logs => LogsView::build().into_any_element(),
-                                ActiveView::About => AboutView::build().into_any_element(),
-                            }),
-                    ),
-            )
+                ),
+        )
     }
 }
