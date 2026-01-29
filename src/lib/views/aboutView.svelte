@@ -32,7 +32,7 @@
         />
 
         <h2 class="text-2xl font-bold">PicoForge</h2>
-        <Badge variant="secondary" class="px-4 py-1">v0.3.0</Badge>
+        <Badge variant="secondary" class="px-4 py-1">v0.3.1</Badge>
         <p class="text-muted-foreground max-w-md">
           An open source commissioning tool for Pico FIDO security keys.
           Developed with Rust, Tauri, and Svelte.
