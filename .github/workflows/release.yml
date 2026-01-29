@@ -192,4 +192,4 @@ jobs:
             fedora:latest \
             /workspace/update_spec_in_container.sh
 
-          rm ./update_spec_in_container.sh
+          rm -f ./update_spec_in_container.sh
