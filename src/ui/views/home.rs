@@ -90,7 +90,7 @@ impl HomeView {
             .flex_col()
             .items_center()
             .child(
-                div().w_full().max_w(px(1400.0)).px_10().py_5().child(
+                div().w_full().max_w(px(1200.0)).px_10().py_5().child(
                     v_flex()
                         .gap_8()
                         .child(

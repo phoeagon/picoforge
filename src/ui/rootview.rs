@@ -125,7 +125,9 @@ impl Render for ApplicationRoot {
                                         SecurityView::build().into_any_element()
                                     }
                                     ActiveView::Logs => LogsView::build().into_any_element(),
-                                    ActiveView::About => AboutView::build().into_any_element(),
+                                    ActiveView::About => {
+                                        AboutView::build(cx.theme()).into_any_element()
+                                    }
                                 }),
                         ),
                 ),

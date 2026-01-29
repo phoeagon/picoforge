@@ -68,12 +68,10 @@ impl<V: 'static> AppSidebar<V> {
     pub fn render(self, cx: &mut Context<V>) -> impl IntoElement {
         let width = self.width;
         let collapsed = self.collapsed;
-        // active_view was unused
         let device_status = self.device_status.clone();
         let device_error = self.device_error.clone();
 
         let border_color = cx.theme().sidebar_border;
-        // bg_color was unused
         let muted_foreground = cx.theme().muted_foreground;
 
         v_flex()
@@ -97,15 +95,11 @@ impl<V: 'static> AppSidebar<V> {
 
                 let header = header.justify_start().pl(padding_left);
 
-                // Icon Animation: Stays 48px until width drops below 120px, then shrinks to 32px
-                // Range: [48px ... 120px] -> [32px ... 48px]
                 let width_icon_start = px(120.);
                 let t_icon =
                     ((current_width - px(48.)) / (width_icon_start - px(48.))).clamp(0.0, 1.0);
                 let icon_size = px(32.) + (px(48.) - px(32.)) * t_icon;
 
-                // Text Animation: Fades out first, before icon starts shrinking
-                // Range: [200px ... 255px] -> [0.0 ... 1.0]
                 let width_text_start = px(200.);
                 let text_opacity: f32 = if current_width > width_text_start {
                     ((current_width - width_text_start) / (px(255.) - width_text_start))
