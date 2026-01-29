@@ -116,7 +116,7 @@ impl Render for ApplicationRoot {
                                         HomeView::build(cx.theme()).into_any_element()
                                     }
                                     ActiveView::Passkeys => {
-                                        PasskeysView::build().into_any_element()
+                                        PasskeysView::build(cx.theme()).into_any_element()
                                     }
                                     ActiveView::Configuration => {
                                         cx.new(|cx| ConfigView::new(window, cx)).into_any_element()
