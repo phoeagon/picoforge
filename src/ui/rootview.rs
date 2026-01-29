@@ -26,6 +26,7 @@ pub struct ApplicationRoot {
     device_loading: bool,
     sidebar_width: Pixels,
     refresh_button: Entity<PFIconButton>,
+    config_view: Option<Entity<ConfigView>>,
 }
 
 impl ApplicationRoot {
@@ -48,6 +49,7 @@ impl ApplicationRoot {
             device_loading: false,
             sidebar_width: px(255.),
             refresh_button,
+            config_view: None,
         };
         this.refresh_device_status(cx);
         this
@@ -151,15 +153,25 @@ impl Render for ApplicationRoot {
                                     ActiveView::Passkeys => {
                                         PasskeysView::build(cx.theme()).into_any_element()
                                     }
-                                    ActiveView::Configuration => cx
-                                        .new(|cx| {
-                                            ConfigView::new(
+                                    ActiveView::Configuration => {
+                                        let view = self.config_view.get_or_insert_with(|| {
+                                            cx.new(|cx| {
+                                                ConfigView::new(
+                                                    window,
+                                                    cx,
+                                                    self.state.device_status.clone(),
+                                                )
+                                            })
+                                        });
+                                        view.update(cx, |view, cx| {
+                                            view.update_status(
+                                                self.state.device_status.clone(),
                                                 window,
                                                 cx,
-                                                self.state.device_status.clone(),
-                                            )
-                                        })
-                                        .into_any_element(),
+                                            );
+                                        });
+                                        view.clone().into_any_element()
+                                    }
                                     ActiveView::Security => {
                                         SecurityView::build(cx).into_any_element()
                                     }

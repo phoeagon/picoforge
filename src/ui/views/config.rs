@@ -48,6 +48,118 @@ impl SelectItem for DriverItem {
     }
 }
 
+struct VendorData {
+    value: &'static str,
+    label: &'static str,
+    vid: &'static str,
+    pid: &'static str,
+}
+
+const VENDORS: &[VendorData] = &[
+    VendorData {
+        value: "custom",
+        label: "Custom (Manual Entry)",
+        vid: "",
+        pid: "",
+    },
+    VendorData {
+        value: "generic",
+        label: "Generic (FEFF:FCFD)",
+        vid: "FEFF",
+        pid: "FCFD",
+    },
+    VendorData {
+        value: "pico-hsm",
+        label: "Pico Keys HSM (2E8A:10FD)",
+        vid: "2E8A",
+        pid: "10FD",
+    },
+    VendorData {
+        value: "pico-fido",
+        label: "Pico Keys Fido (2E8A:10FE)",
+        vid: "2E8A",
+        pid: "10FE",
+    },
+    VendorData {
+        value: "pico-openpgp",
+        label: "Pico Keys OpenPGP (2E8A:10FF)",
+        vid: "2E8A",
+        pid: "10FF",
+    },
+    VendorData {
+        value: "pico",
+        label: "Pico (2E8A:0003)",
+        vid: "2E8A",
+        pid: "0003",
+    },
+    VendorData {
+        value: "solokeys",
+        label: "SoloKeys (0483:A2CA)",
+        vid: "0483",
+        pid: "A2CA",
+    },
+    VendorData {
+        value: "nitrohsm",
+        label: "NitroHSM (20A0:4230)",
+        vid: "20A0",
+        pid: "4230",
+    },
+    VendorData {
+        value: "nitrofido2",
+        label: "NitroFIDO2 (20A0:42D4)",
+        vid: "20A0",
+        pid: "42D4",
+    },
+    VendorData {
+        value: "nitrostart",
+        label: "NitroStart (20A0:4211)",
+        vid: "20A0",
+        pid: "4211",
+    },
+    VendorData {
+        value: "nitropro",
+        label: "NitroPro (20A0:4108)",
+        vid: "20A0",
+        pid: "4108",
+    },
+    VendorData {
+        value: "nitro3",
+        label: "Nitrokey 3 (20A0:42B2)",
+        vid: "20A0",
+        pid: "42B2",
+    },
+    VendorData {
+        value: "yubikey5",
+        label: "YubiKey 5 (1050:0407)",
+        vid: "1050",
+        pid: "0407",
+    },
+    VendorData {
+        value: "yubikeyneo",
+        label: "YubiKey Neo (1050:0116)",
+        vid: "1050",
+        pid: "0116",
+    },
+    VendorData {
+        value: "yubihsm",
+        label: "YubiHSM 2 (1050:0030)",
+        vid: "1050",
+        pid: "0030",
+    },
+    VendorData {
+        value: "gnuk",
+        label: "Gnuk Token (234B:0000)",
+        vid: "234B",
+        pid: "0000",
+    },
+    VendorData {
+        value: "gnupg",
+        label: "GnuPG (234B:0000)",
+        vid: "234B",
+        pid: "0000",
+    },
+];
+
 pub struct ConfigView {
     vendor_select: Entity<SelectState<Vec<VendorItem>>>,
     vid_input: Entity<InputState>,
@@ -63,6 +175,7 @@ pub struct ConfigView {
     enable_secp256k1: bool,
     loading: bool,
     device_status: Option<FullDeviceStatus>,
+    is_custom_vendor: bool,
 }
 
 impl ConfigView {
@@ -73,78 +186,84 @@ impl ConfigView {
     ) -> Self {
         let config = device_status.as_ref().map(|s| &s.config);
 
-        let vendors = vec![
-            VendorItem {
-                value: "custom".into(),
-                label: "Custom".into(),
-            },
-            VendorItem {
-                value: "solokeys".into(),
-                label: "SoloKeys".into(),
-            },
-            VendorItem {
-                value: "google".into(),
-                label: "Google".into(),
-            },
-            VendorItem {
-                value: "yubico".into(),
-                label: "Yubico".into(),
-            },
-        ];
+        let vendors: Vec<VendorItem> = VENDORS
+            .iter()
+            .map(|v| VendorItem {
+                value: v.value.into(),
+                label: v.label.into(),
+            })
+            .collect();
 
         let drivers = vec![
             DriverItem {
-                value: 0,
-                label: "WS2812".into(),
-            },
-            DriverItem {
                 value: 1,
-                label: "SK6812".into(),
+                label: "Pico (Standard GPIO)".into(),
             },
             DriverItem {
                 value: 2,
-                label: "APA102".into(),
+                label: "Pimoroni (RGB)".into(),
+            },
+            DriverItem {
+                value: 3,
+                label: "WS2812 (Neopixel)".into(),
+            },
+            DriverItem {
+                value: 5,
+                label: "ESP32 Neopixel".into(),
             },
         ];
+
+        // Determine initial vendor selection
+        let current_vid: SharedString = config
+            .map(|c| c.vid.clone().into())
+            .unwrap_or_else(|| "CAFE".into());
+        let current_pid: SharedString = config
+            .map(|c| c.pid.clone().into())
+            .unwrap_or_else(|| "4242".into());
+        let current_product_name: SharedString = config
+            .map(|c| c.product_name.clone().into())
+            .unwrap_or_else(|| "My Key".into());
+        let current_led_gpio: SharedString = config
+            .map(|c| c.led_gpio.to_string().into())
+            .unwrap_or_else(|| "25".into());
+        let current_touch_timeout: SharedString = config
+            .map(|c| c.touch_timeout.to_string().into())
+            .unwrap_or_else(|| "10".into());
+        let current_brightness = config.map(|c| c.led_brightness as f32).unwrap_or(8.0);
+
+        let mut initial_vendor_idx = 0; // Default to first item (Custom)
+        let mut is_custom_vendor = true;
+
+        for (i, vendor) in VENDORS.iter().enumerate() {
+            // Check matching VID/PID, but skip the generic "custom" entries if they don't have specific values
+            if vendor.value == "custom" && vendor.vid.is_empty() {
+                continue;
+            }
+            if vendor.vid.eq_ignore_ascii_case(current_vid.as_ref())
+                && vendor.pid.eq_ignore_ascii_case(current_pid.as_ref())
+            {
+                initial_vendor_idx = i;
+                is_custom_vendor = false;
+                break;
+            }
+        }
 
         let vendor_select = cx.new(|cx| {
             SelectState::new(
                 vendors,
-                Some(gpui_component::IndexPath::default()),
+                Some(gpui_component::IndexPath::default().row(initial_vendor_idx)),
                 window,
                 cx,
             )
         });
 
-        let vid_input = cx.new(|cx| {
-            InputState::new(window, cx).default_value(
-                config
-                    .map(|c| c.vid.clone())
-                    .unwrap_or_else(|| "CAFE".into()),
-            )
-        });
-        let pid_input = cx.new(|cx| {
-            InputState::new(window, cx).default_value(
-                config
-                    .map(|c| c.pid.clone())
-                    .unwrap_or_else(|| "4242".into()),
-            )
-        });
-        let product_name_input = cx.new(|cx| {
-            InputState::new(window, cx).default_value(
-                config
-                    .map(|c| c.product_name.clone())
-                    .unwrap_or_else(|| "My Key".into()),
-            )
-        });
+        let vid_input = cx.new(|cx| InputState::new(window, cx).default_value(current_vid.clone()));
+        let pid_input = cx.new(|cx| InputState::new(window, cx).default_value(current_pid.clone()));
+        let product_name_input =
+            cx.new(|cx| InputState::new(window, cx).default_value(current_product_name.clone()));
 
-        let led_gpio_input = cx.new(|cx| {
-            InputState::new(window, cx).default_value(
-                config
-                    .map(|c| c.led_gpio.to_string())
-                    .unwrap_or_else(|| "25".into()),
-            )
-        });
+        let led_gpio_input =
+            cx.new(|cx| InputState::new(window, cx).default_value(current_led_gpio.clone()));
 
         let _initial_driver_idx = config.and_then(|c| c.led_driver).unwrap_or(0) as usize;
         let led_driver_select = cx.new(|cx| {
@@ -156,26 +275,37 @@ impl ConfigView {
             )
         });
 
-        // Set initial selection for driver?
-        // Note: SelectState currently defaults to first item if index path is default.
-        // We'd strictly need to set the index path based on value.
-        // For now trusting default or user interaction.
+        cx.subscribe_in(
+            &vendor_select,
+            window,
+            |this: &mut Self, _, event, window, cx| {
+                if let gpui_component::select::SelectEvent::Confirm(Some(value)) = event {
+                    if let Some(vendor) = VENDORS.iter().find(|v| value == v.value) {
+                        this.is_custom_vendor = vendor.value == "custom";
+
+                        if !this.is_custom_vendor {
+                            this.vid_input
+                                .update(cx, |input, cx| input.set_value(vendor.vid, window, cx));
+                            this.pid_input
+                                .update(cx, |input, cx| input.set_value(vendor.pid, window, cx));
+                        }
+                        cx.notify();
+                    }
+                }
+            },
+        )
+        .detach();
 
         let led_brightness_slider = cx.new(|_| {
             SliderState::new()
                 .min(0.0)
                 .max(15.0)
                 .step(1.0)
-                .default_value(config.map(|c| c.led_brightness as f32).unwrap_or(8.0))
+                .default_value(current_brightness)
         });
 
-        let touch_timeout_input = cx.new(|cx| {
-            InputState::new(window, cx).default_value(
-                config
-                    .map(|c| c.touch_timeout.to_string())
-                    .unwrap_or_else(|| "10".into()),
-            )
-        });
+        let touch_timeout_input =
+            cx.new(|cx| InputState::new(window, cx).default_value(current_touch_timeout.clone()));
 
         Self {
             vendor_select,
@@ -191,7 +321,8 @@ impl ConfigView {
             power_cycle: config.map(|c| c.power_cycle_on_reset).unwrap_or(false),
             enable_secp256k1: config.map(|c| c.enable_secp256k1).unwrap_or(true),
             loading: false,
-            device_status,
+            device_status: device_status.clone(),
+            is_custom_vendor,
         }
     }
 
@@ -313,6 +444,63 @@ impl ConfigView {
         cx.notify();
     }
 
+    pub fn update_status(
+        &mut self,
+        status: Option<FullDeviceStatus>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.device_status == status {
+            return;
+        }
+        self.device_status = status.clone();
+        let config = status.as_ref().map(|s| &s.config);
+
+        // Update inputs
+        let vid = config
+            .map(|c| c.vid.clone())
+            .unwrap_or_else(|| "CAFE".into());
+        self.vid_input
+            .update(cx, |input, cx| input.set_value(vid, window, cx));
+
+        let pid = config
+            .map(|c| c.pid.clone())
+            .unwrap_or_else(|| "4242".into());
+        self.pid_input
+            .update(cx, |input, cx| input.set_value(pid, window, cx));
+
+        let product = config
+            .map(|c| c.product_name.clone())
+            .unwrap_or_else(|| "My Key".into());
+        self.product_name_input
+            .update(cx, |input, cx| input.set_value(product, window, cx));
+
+        let gpio = config
+            .map(|c| c.led_gpio.to_string())
+            .unwrap_or_else(|| "25".into());
+        self.led_gpio_input
+            .update(cx, |input, cx| input.set_value(gpio, window, cx));
+
+        let timeout = config
+            .map(|c| c.touch_timeout.to_string())
+            .unwrap_or_else(|| "10".into());
+        self.touch_timeout_input
+            .update(cx, |input, cx| input.set_value(timeout, window, cx));
+
+        // Update flags
+        self.led_dimmable = config.map(|c| c.led_dimmable).unwrap_or(true);
+        self.led_steady = config.map(|c| c.led_steady).unwrap_or(false);
+        self.power_cycle = config.map(|c| c.power_cycle_on_reset).unwrap_or(false);
+        self.enable_secp256k1 = config.map(|c| c.enable_secp256k1).unwrap_or(true);
+
+        // Update slider
+        let brightness = config.map(|c| c.led_brightness as f32).unwrap_or(8.0);
+        self.led_brightness_slider
+            .update(cx, |slider, cx| slider.set_value(brightness, window, cx));
+
+        cx.notify();
+    }
+
     fn render_identity_card(&self, theme: &Theme) -> impl IntoElement {
         let content = v_flex()
             .gap_4()
@@ -328,16 +516,18 @@ impl ConfigView {
                     .grid_cols(2)
                     .gap_4()
                     .child(
-                        v_flex()
-                            .gap_2()
-                            .child("Vendor ID (HEX)")
-                            .child(Input::new(&self.vid_input).font_family("Mono")),
+                        v_flex().gap_2().child("Vendor ID (HEX)").child(
+                            Input::new(&self.vid_input)
+                                .font_family("Mono")
+                                .disabled(!self.is_custom_vendor),
+                        ),
                     )
                     .child(
-                        v_flex()
-                            .gap_2()
-                            .child("Product ID (HEX)")
-                            .child(Input::new(&self.pid_input).font_family("Mono")),
+                        v_flex().gap_2().child("Product ID (HEX)").child(
+                            Input::new(&self.pid_input)
+                                .font_family("Mono")
+                                .disabled(!self.is_custom_vendor),
+                        ),
                     ),
             )
             .child(div().h_px().bg(theme.border))
