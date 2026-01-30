@@ -1,10 +1,10 @@
 use crate::device::io;
 use crate::device::types::{AppConfigInput, FullDeviceStatus};
-use crate::ui::components::page_view::PageView;
+use crate::ui::components::{card::Card, page_view::PageView};
 use crate::ui::ui_types::VENDORS;
 use gpui::*;
 use gpui_component::{
-    ActiveTheme, Disableable, Icon, StyledExt, Theme,
+    ActiveTheme, Disableable, Icon, Theme,
     button::Button,
     input::{Input, InputState},
     select::{Select, SelectItem, SelectState},
@@ -432,13 +432,11 @@ impl ConfigView {
                     .child(Input::new(&self.product_name_input)),
             );
 
-        Self::config_card(
-            "Identity",
-            "USB Identification settings",
-            Icon::default().path("icons/tag.svg"),
-            content,
-            theme,
-        )
+        Card::new()
+            .title("Identity")
+            .description("USB Identification settings")
+            .icon(Icon::default().path("icons/tag.svg"))
+            .child(content)
     }
 
     fn render_led_card(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -522,13 +520,11 @@ impl ConfigView {
                     ),
             );
 
-        Self::config_card(
-            "LED Settings",
-            "Adjust visual feedback behavior",
-            Icon::default().path("icons/microchip.svg"),
-            content,
-            theme,
-        )
+        Card::new()
+            .title("LED Settings")
+            .description("Adjust visual feedback behavior")
+            .icon(Icon::default().path("icons/microchip.svg"))
+            .child(content)
     }
 
     fn render_touch_card(&self, theme: &Theme) -> impl IntoElement {
@@ -539,13 +535,11 @@ impl ConfigView {
                 .child(Input::new(&self.touch_timeout_input)),
         );
 
-        Self::config_card(
-            "Touch & Timing",
-            "Configure interaction timeouts",
-            Icon::default().path("icons/settings.svg"),
-            content,
-            theme,
-        )
+        Card::new()
+            .title("Touch & Timing")
+            .description("Configure interaction timeouts")
+            .icon(Icon::default().path("icons/settings.svg"))
+            .child(content)
     }
 
     fn render_options_card(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -600,56 +594,11 @@ impl ConfigView {
                     ),
             );
 
-        Self::config_card(
-            "Device Options",
-            "Toggle advanced features",
-            Icon::default().path("icons/settings.svg"),
-            content,
-            &theme,
-        )
-    }
-
-    fn config_card(
-        title: &str,
-        description: &str,
-        icon: Icon,
-        content: impl IntoElement,
-        theme: &Theme,
-    ) -> impl IntoElement {
-        div()
-            .w_full()
-            .bg(rgb(0x18181b)) // Using the same bg as home card
-            .border_1()
-            .border_color(theme.border)
-            .rounded_xl()
-            .p_6()
-            .child(
-                v_flex()
-                    .gap_6()
-                    .child(
-                        v_flex()
-                            .gap_1()
-                            .child(
-                                gpui_component::h_flex()
-                                    .items_center()
-                                    .gap_2()
-                                    .child(Icon::new(icon).size_5().text_color(theme.foreground))
-                                    .child(
-                                        div()
-                                            .font_bold()
-                                            .text_color(theme.foreground)
-                                            .child(title.to_string()),
-                                    ),
-                            )
-                            .child(
-                                div()
-                                    .text_sm()
-                                    .text_color(theme.muted_foreground)
-                                    .child(description.to_string()),
-                            ),
-                    )
-                    .child(content),
-            )
+        Card::new()
+            .title("Device Options")
+            .description("Toggle advanced features")
+            .icon(Icon::default().path("icons/settings.svg"))
+            .child(content)
     }
 }
 

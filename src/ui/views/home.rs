@@ -1,5 +1,5 @@
 use crate::device::types::DeviceMethod;
-use crate::ui::components::page_view::PageView;
+use crate::ui::components::{card::Card, page_view::PageView};
 use crate::ui::ui_types::GlobalDeviceState;
 use gpui::*;
 use gpui_component::StyledExt;
@@ -46,39 +46,6 @@ impl HomeView {
         )
     }
 
-    fn home_card(
-        title: &str,
-        icon: Icon,
-        content: impl IntoElement,
-        theme: &Theme,
-    ) -> impl IntoElement {
-        div()
-            .w_full()
-            // TODO: REPLACE with a constant or modify default theme
-            .bg(rgb(0x18181b))
-            .border_1()
-            .border_color(theme.border)
-            .rounded_xl()
-            .p_6()
-            .child(
-                v_flex()
-                    .gap_6()
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .gap_2()
-                            .child(Icon::new(icon).size_5().text_color(theme.foreground))
-                            .child(
-                                div()
-                                    .font_bold()
-                                    .text_color(theme.foreground)
-                                    .child(title.to_string()),
-                            ),
-                    )
-                    .child(content),
-            )
-    }
-
     // Helper for Key-Value pairs
     fn render_kv(
         label: &str,
@@ -115,70 +82,70 @@ impl HomeView {
 
         let flash_percent = (info.flash_used as f32 / info.flash_total as f32) * 100.0;
 
-        Self::home_card(
-            "Device Information",
-            Icon::default().path("icons/cpu.svg"),
-            v_flex()
-                .gap_6()
-                .child(
-                    div()
-                        .grid()
-                        .grid_cols(2)
-                        .gap_4()
-                        .child(Self::render_kv(
-                            "Serial Number",
-                            info.serial.clone(),
-                            theme,
-                            true,
-                        ))
-                        .child(Self::render_kv(
-                            "Firmware Version",
-                            format!("v{}", info.firmware_version),
-                            theme,
-                            true,
-                        ))
-                        .child(Self::render_kv(
-                            "VID:PID",
-                            format!("{}, {}", config.vid, config.pid),
-                            theme,
-                            true,
-                        ))
-                        .child(Self::render_kv(
-                            "Product Name",
-                            config.product_name.clone(),
-                            theme,
-                            false,
-                        )),
-                )
-                .child(div().h_px().bg(theme.border))
-                .child(
-                    v_flex()
-                        .gap_2()
-                        .child(
-                            h_flex()
-                                .justify_between()
-                                .text_sm()
-                                .child(
-                                    div()
-                                        .text_color(theme.muted_foreground)
-                                        .child("Flash Memory"),
-                                )
-                                .child(div().text_color(theme.foreground).child(format!(
-                                    "{:.0} / {:.0} KB",
-                                    info.flash_used, info.flash_total
-                                ))),
-                        )
-                        .child(Progress::new().value(flash_percent)),
-                ),
-            theme,
-        )
+        Card::new()
+            .title("Device Information")
+            .icon(Icon::default().path("icons/cpu.svg"))
+            .child(
+                v_flex()
+                    .gap_6()
+                    .child(
+                        div()
+                            .grid()
+                            .grid_cols(2)
+                            .gap_4()
+                            .child(Self::render_kv(
+                                "Serial Number",
+                                info.serial.clone(),
+                                theme,
+                                true,
+                            ))
+                            .child(Self::render_kv(
+                                "Firmware Version",
+                                format!("v{}", info.firmware_version),
+                                theme,
+                                true,
+                            ))
+                            .child(Self::render_kv(
+                                "VID:PID",
+                                format!("{}, {}", config.vid, config.pid),
+                                theme,
+                                true,
+                            ))
+                            .child(Self::render_kv(
+                                "Product Name",
+                                config.product_name.clone(),
+                                theme,
+                                false,
+                            )),
+                    )
+                    .child(div().h_px().bg(theme.border))
+                    .child(
+                        v_flex()
+                            .gap_2()
+                            .child(
+                                h_flex()
+                                    .justify_between()
+                                    .text_sm()
+                                    .child(
+                                        div()
+                                            .text_color(theme.muted_foreground)
+                                            .child("Flash Memory"),
+                                    )
+                                    .child(div().text_color(theme.foreground).child(format!(
+                                        "{:.0} / {:.0} KB",
+                                        info.flash_used, info.flash_total
+                                    ))),
+                            )
+                            .child(Progress::new().value(flash_percent)),
+                    ),
+            )
     }
 
     fn render_fido_info(state: &GlobalDeviceState, theme: &Theme) -> impl IntoElement {
-        Self::home_card(
-            "FIDO2 Information",
-            Icon::default().path("icons/shield.svg"),
-            if let Some(fido) = &state.fido_info {
+        Card::new()
+            .title("FIDO2 Information")
+            .icon(Icon::default().path("icons/shield.svg"))
+            .child(if let Some(fido) = &state.fido_info {
                 v_flex()
                     .gap_6()
                     .child(
@@ -228,18 +195,16 @@ impl HomeView {
                     .text_color(theme.muted_foreground)
                     .child("FIDO information not available")
                     .into_any_element()
-            },
-            theme,
-        )
+            })
     }
 
     fn render_led_config(state: &GlobalDeviceState, theme: &Theme) -> impl IntoElement {
         let status = state.device_status.as_ref().unwrap();
         let config = &status.config;
-        Self::home_card(
-            "LED Configuration",
-            Icon::default().path("icons/microchip.svg"),
-            if status.method == DeviceMethod::Fido {
+        Card::new()
+            .title("LED Configuration")
+            .icon(Icon::default().path("icons/microchip.svg"))
+            .child(if status.method == DeviceMethod::Fido {
                 v_flex()
                     .items_center()
                     .justify_center()
@@ -328,95 +293,93 @@ impl HomeView {
                             ),
                     )
                     .into_any_element()
-            },
-            theme,
-        )
+            })
     }
 
     fn render_security_status(state: &GlobalDeviceState, theme: &Theme) -> impl IntoElement {
         let status = state.device_status.as_ref().unwrap();
-        Self::home_card(
-            "Security Status",
-            Icon::default().path("icons/shield-check.svg"),
-            v_flex()
-                .gap_3()
-                .text_sm()
-                .child(
-                    h_flex()
-                        .justify_between()
-                        .items_center()
-                        .child(div().text_color(theme.muted_foreground).child("Boot Mode"))
-                        .child(
-                            h_flex()
-                                .gap_2()
-                                .items_center()
-                                .child(if status.secure_boot {
-                                    Icon::default()
-                                        .path("icons/lock.svg")
-                                        .size_3p5()
-                                        .text_color(gpui::green())
+        Card::new()
+            .title("Security Status")
+            .icon(Icon::default().path("icons/shield-check.svg"))
+            .child(
+                v_flex()
+                    .gap_3()
+                    .text_sm()
+                    .child(
+                        h_flex()
+                            .justify_between()
+                            .items_center()
+                            .child(div().text_color(theme.muted_foreground).child("Boot Mode"))
+                            .child(
+                                h_flex()
+                                    .gap_2()
+                                    .items_center()
+                                    .child(if status.secure_boot {
+                                        Icon::default()
+                                            .path("icons/lock.svg")
+                                            .size_3p5()
+                                            .text_color(gpui::green())
+                                    } else {
+                                        Icon::default()
+                                            .path("icons/lock-open.svg")
+                                            .size_3p5()
+                                            .text_color(rgb(0xfe9a00))
+                                    })
+                                    .child(
+                                        Badge::new()
+                                            .child(if status.secure_boot {
+                                                "Secure Boot"
+                                            } else {
+                                                "Development"
+                                            })
+                                            .color(if status.secure_boot {
+                                                theme.primary
+                                            } else {
+                                                theme.secondary
+                                            }),
+                                    ),
+                            ),
+                    )
+                    .child(
+                        h_flex()
+                            .justify_between()
+                            .items_center()
+                            .child(
+                                div()
+                                    .text_color(theme.muted_foreground)
+                                    .child("Debug Interface"),
+                            )
+                            .child(div().font_medium().text_color(theme.foreground).child(
+                                if status.secure_lock {
+                                    "Read-out Locked"
                                 } else {
-                                    Icon::default()
-                                        .path("icons/lock-open.svg")
-                                        .size_3p5()
-                                        .text_color(rgb(0xfe9a00))
-                                })
-                                .child(
-                                    Badge::new()
-                                        .child(if status.secure_boot {
-                                            "Secure Boot"
-                                        } else {
-                                            "Development"
-                                        })
-                                        .color(if status.secure_boot {
-                                            theme.primary
-                                        } else {
-                                            theme.secondary
-                                        }),
-                                ),
-                        ),
-                )
-                .child(
-                    h_flex()
-                        .justify_between()
-                        .items_center()
-                        .child(
-                            div()
-                                .text_color(theme.muted_foreground)
-                                .child("Debug Interface"),
-                        )
-                        .child(div().font_medium().text_color(theme.foreground).child(
-                            if status.secure_lock {
-                                "Read-out Locked"
-                            } else {
-                                "Debug Enabled"
-                            },
-                        )),
-                )
-                .child(
-                    h_flex()
-                        .justify_between()
-                        .items_center()
-                        .child(
-                            div()
-                                .text_color(theme.muted_foreground)
-                                .child("Secure Lock"),
-                        )
-                        .child(
-                            Badge::new()
-                                .child(if status.secure_lock {
-                                    "Acknowledged"
-                                } else {
-                                    "Pending"
-                                })
-                                .color(if status.secure_lock {
-                                    gpui::red()
-                                } else {
-                                    theme.secondary
-                                }),
-                        ),
-                ),
-            theme,
-        )
+                                    "Debug Enabled"
+                                },
+                            )),
+                    )
+                    .child(
+                        h_flex()
+                            .justify_between()
+                            .items_center()
+                            .child(
+                                div()
+                                    .text_color(theme.muted_foreground)
+                                    .child("Secure Lock"),
+                            )
+                            .child(
+                                Badge::new()
+                                    .child(if status.secure_lock {
+                                        "Acknowledged"
+                                    } else {
+                                        "Pending"
+                                    })
+                                    .color(if status.secure_lock {
+                                        gpui::red()
+                                    } else {
+                                        theme.secondary
+                                    }),
+                            ),
+                    ),
+            )
     }
 }

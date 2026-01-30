@@ -1,7 +1,7 @@
 use crate::ui::components::page_view::PageView;
 use gpui::*;
 use gpui_component::{
-    ActiveTheme, Icon, StyledExt, button::Button, h_flex, scroll::ScrollableElement, v_flex,
+    ActiveTheme, Icon, button::Button, h_flex, scroll::ScrollableElement, v_flex,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]

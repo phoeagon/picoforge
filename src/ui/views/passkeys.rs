@@ -1,4 +1,4 @@
-use crate::ui::components::page_view::PageView;
+use crate::ui::components::{card::Card, page_view::PageView};
 use gpui::*;
 use gpui_component::StyledExt;
 use gpui_component::button::ButtonVariants;
@@ -125,73 +125,17 @@ impl PasskeysView {
             .into_any_element()
     }
 
-    fn main_card(
-        title: &str,
-        icon_path: impl Into<SharedString>,
-        description: &str,
-        content: impl IntoElement,
-        header_right: Option<impl IntoElement>,
-        theme: &Theme,
-    ) -> impl IntoElement {
-        div()
-            .w_full()
-            .bg(rgb(0x18181b)) // Using the same dark bg as in HomeView
-            .border_1()
-            .border_color(theme.border)
-            .rounded_xl()
-            .p_6()
+    fn render_pin_management(device: &DeviceState, theme: &Theme) -> impl IntoElement {
+        Card::new()
+            .title("PIN Management")
+            .icon(Icon::default().path("icons/key.svg"))
+            .description("Configure FIDO2 PIN security")
             .child(
                 v_flex()
-                    .gap_6()
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .justify_between()
-                            .child(
-                                v_flex()
-                                    .gap_1()
-                                    .child(
-                                        h_flex()
-                                            .items_center()
-                                            .gap_2()
-                                            .child(
-                                                Icon::default()
-                                                    .path(icon_path)
-                                                    .size_5()
-                                                    .text_color(theme.foreground),
-                                            )
-                                            .child(
-                                                div()
-                                                    .font_bold()
-                                                    .text_color(theme.foreground)
-                                                    .child(title.to_string()),
-                                            ),
-                                    )
-                                    .child(
-                                        div()
-                                            .text_sm()
-                                            .text_color(theme.muted_foreground)
-                                            .child(description.to_string()),
-                                    ),
-                            )
-                            .children(header_right),
-                    )
-                    .child(content),
+                    .gap_4()
+                    .child(Self::render_pin_status_row(device, theme))
+                    .child(Self::render_min_pin_length_row(device, theme)),
             )
-    }
-
-    fn render_pin_management(device: &DeviceState, theme: &Theme) -> impl IntoElement {
-        Self::main_card(
-            "PIN Management",
-            "icons/key.svg",
-            "Configure FIDO2 PIN security",
-            v_flex()
-                .gap_4()
-                .child(Self::render_pin_status_row(device, theme))
-                .child(Self::render_min_pin_length_row(device, theme)),
-            None::<AnyElement>,
-            theme,
-        )
     }
 
     fn render_pin_status_row(device: &DeviceState, theme: &Theme) -> impl IntoElement {
@@ -263,24 +207,22 @@ impl PasskeysView {
     }
 
     fn render_stored_passkeys(device: &DeviceState, theme: &Theme) -> impl IntoElement {
-        Self::main_card(
-            "Stored Passkeys",
-            "icons/key-round.svg",
-            "View and manage your resident credentials",
-            if !device.unlocked {
+        Card::new()
+            .title("Stored Passkeys")
+            .icon(Icon::default().path("icons/key-round.svg"))
+            .description("View and manage your resident credentials")
+            .child(if !device.unlocked {
                 Self::render_locked_state(theme).into_any_element()
             } else {
                 Self::render_unlocked_state(device, theme).into_any_element()
-            },
-            Some(
-                div()
-                    .child("View and manage your resident credentials")
-                    .text_sm()
-                    .text_color(theme.muted_foreground)
-                    .invisible(),
-            ),
-            theme,
-        )
+            })
+        // header_right was effectively invisible/placeholder in original code:
+        // Some(div().child("View and manage...").invisible())
+        // We can omit it or add it if needed, but it looked like a hack or mistake in original code?
+        // The original header_right was:
+        // Some(div().child("View and manage your resident credentials").text_sm().text_color(...).invisible())
+        // This suggests it was maybe trying to take up space or something? But description handles the text.
+        // I will simplify and omit it, which is cleaner.
     }
 
     fn render_locked_state(theme: &Theme) -> impl IntoElement {
