@@ -20,13 +20,13 @@
 rustPlatform.buildRustPackage (finalAttrs: {
 
   pname = "picoforge";
-  version = "0.3.0";
+  version = "0.3.1";
 
   src = fetchFromGitHub {
     owner = "librekeys";
     repo = "picoforge";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-26UGHCzpN14UTsSQ7gIeRh/Qv0ze03BXTjvp4tdflo8=";
+    hash = "sha256-v3N/E80mS8KZafWJ5T6BD3+O9LL+iwNXFEThbo4Lf0Y=";
   };
 
   cargoRoot = "src-tauri";
@@ -58,7 +58,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     name = "${finalAttrs.pname}-${finalAttrs.version}-frontend-dist";
     inherit (finalAttrs) src;
 
-    npmDepsHash = "sha256-7DLooiGLzk3JRsKAftOxSf7HAgHBXCJDaAFp2p/pryc=";
+    npmDepsHash = "sha256-yCs/Fvtf0m5eW/m+Revzn3q1P7wwkwinUBHLOcV06/M=";
 
     installPhase = ''
       runHook preInstall
@@ -95,9 +95,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   meta = {
     changelog = "https://github.com/librekeys/picoforge/releases/tag/v${finalAttrs.version}";
-    description = "An open source commissioning tool for Pico FIDO security keys";
+    description = "Open source commissioning tool for Pico FIDO security keys";
     homepage = "https://github.com/librekeys/picoforge";
     license = lib.licenses.agpl3Only;
     mainProgram = "picoforge";
+    platforms = lib.platforms.linux;
   };
 })
