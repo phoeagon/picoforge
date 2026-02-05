@@ -1,52 +1,56 @@
+use crate::logging::LOG_BUFFER;
 use crate::ui::components::page_view::PageView;
 use gpui::*;
 use gpui_component::{
     ActiveTheme, Icon, button::Button, h_flex, scroll::ScrollableElement, v_flex,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum LogType {
-    Success,
-    Error,
-    Warning,
-    Info,
-}
-
-#[derive(Clone, Debug)]
-pub struct LogEntry {
-    pub timestamp: String,
-    pub level: LogType,
-    pub message: String,
-}
-
 pub struct LogsView {
-    logs: Vec<LogEntry>,
+    logs: Vec<String>,
 }
 
 impl LogsView {
-    pub fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
-        Self {
-            logs: vec![
-                LogEntry {
-                    timestamp: "16:03:42".to_string(), // Placeholder
-                    level: LogType::Info,
-                    message: "Application started.".to_string(),
-                },
-                LogEntry {
-                    timestamp: "16:03:42".to_string(),
-                    level: LogType::Info,
-                    message: "Attempting to connect to device...".to_string(),
-                },
-                LogEntry {
-                    timestamp: "16:03:43".to_string(),
-                    level: LogType::Success,
-                    message: "Device Connected! Serial: 4490838745737CC0, FW: v7.2".to_string(),
-                },
-            ],
+    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let view_weak = cx.entity().downgrade();
+        let mut cx_async = cx.to_async();
+
+        cx.spawn(async move |_, _| {
+            loop {
+                cx_async
+                    .background_executor()
+                    .timer(std::time::Duration::from_millis(250))
+                    .await;
+
+                if let Some(view) = view_weak.upgrade() {
+                    view.update(&mut cx_async, |view, cx| {
+                        view.sync_logs();
+                        cx.notify();
+                    })
+                    .ok();
+                } else {
+                    break;
+                }
+            }
+        })
+        .detach();
+
+        Self { logs: Vec::new() }
+    }
+
+    fn sync_logs(&mut self) {
+        if let Some(buffer) = LOG_BUFFER.get() {
+            if let Ok(logs) = buffer.lock() {
+                self.logs = logs.clone();
+            }
         }
     }
 
     fn clear(&mut self, cx: &mut Context<Self>) {
+        if let Some(buffer) = LOG_BUFFER.get() {
+            if let Ok(mut logs) = buffer.lock() {
+                logs.clear();
+            }
+        }
         self.logs.clear();
         cx.notify();
     }
@@ -105,40 +109,20 @@ impl Render for LogsView {
                                 .overflow_y_scrollbar()
                                 .flex_1()
                                 .h(px(500.0))
-                                .child(div().p_4().font_family("Mono").text_sm().child({
-                                    let theme = theme.clone(); // Clone for closure
-                                    v_flex().gap_1().children(self.logs.iter().map(move |log| {
-                                        div()
-                                            .flex()
-                                            .gap_3()
-                                            .child(
-                                                div()
-                                                    .text_color(theme.muted_foreground)
-                                                    .flex_shrink_0()
-                                                    .child(format!("[{}]", log.timestamp)),
-                                            )
-                                            .child(
-                                                div()
-                                                    .whitespace_normal()
-                                                    .text_color(match log.level {
-                                                        LogType::Success => gpui::green(),
-                                                        LogType::Error => gpui::red(),
-                                                        LogType::Warning => gpui::yellow(),
-                                                        LogType::Info => gpui::white(),
-                                                    })
-                                                    .child(format!(
-                                                        "{} {}",
-                                                        match log.level {
-                                                            LogType::Success => "➜",
-                                                            LogType::Error => "✖",
-                                                            LogType::Warning => "⚠",
-                                                            LogType::Info => "",
-                                                        },
-                                                        log.message
-                                                    )),
-                                            )
-                                    }))
-                                }))
+                                .child(div().p_4().font_family("Mono").text_sm().child(
+                                    v_flex().gap_1().children(self.logs.iter().map(|log| {
+                                        // Simple heuristic for color
+                                        let color = if log.contains("ERROR") {
+                                            gpui::red()
+                                        } else if log.contains("WARN") {
+                                            gpui::yellow()
+                                        } else {
+                                            theme.foreground
+                                        };
+
+                                        div().text_color(color).child(log.clone())
+                                    })),
+                                ))
                                 .into_any_element()
                         }),
                 ),

@@ -28,6 +28,7 @@ pub struct ApplicationRoot {
     sidebar_width: Pixels,
     config_view: Option<Entity<ConfigView>>,
     passkeys_view: Option<Entity<PasskeysView>>,
+    logs_view: Option<Entity<LogsView>>,
 }
 
 impl ApplicationRoot {
@@ -40,6 +41,7 @@ impl ApplicationRoot {
             sidebar_width: px(255.),
             config_view: None,
             passkeys_view: None,
+            logs_view: None,
         };
         this.refresh_device_status(cx);
         this
@@ -204,7 +206,10 @@ impl Render for ApplicationRoot {
                                         SecurityView::build(cx).into_any_element()
                                     }
                                     ActiveView::Logs => {
-                                        cx.new(|cx| LogsView::new(window, cx)).into_any_element()
+                                        let view = self.logs_view.get_or_insert_with(|| {
+                                            cx.new(|cx| LogsView::new(window, cx))
+                                        });
+                                        view.clone().into_any_element()
                                     }
                                     ActiveView::About => {
                                         AboutView::build(cx.theme()).into_any_element()
