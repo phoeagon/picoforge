@@ -88,10 +88,12 @@ impl PasskeysView {
 
         self._task = Some(cx.spawn(async move |_, cx| {
             let pin_for_bg = pin.clone();
-            let result = cx
-                .background_executor()
-                .spawn(async move { io::get_credentials(pin_for_bg) })
-                .await;
+            // let result = cx
+            //     .background_executor()
+            //     .spawn(async move { io::get_credentials(pin_for_bg) })
+            //     .await;
+
+            let result = io::get_credentials(pin_for_bg).await;
 
             let _ = entity.update(cx, |this, cx| {
                 this.loading = false;
@@ -156,10 +158,7 @@ impl PasskeysView {
     fn refresh_credentials(&mut self, pin: String, cx: &mut Context<Self>) {
         let entity = cx.entity().downgrade();
         self._task = Some(cx.spawn(async move |_, cx| {
-            let result = cx
-                .background_executor()
-                .spawn(async move { io::get_credentials(pin) })
-                .await;
+            let result = io::get_credentials(pin).await;
 
             let _ = entity.update(cx, |this, cx| {
                 this.loading = false;

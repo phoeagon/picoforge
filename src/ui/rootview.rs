@@ -43,11 +43,11 @@ impl ApplicationRoot {
             passkeys_view: None,
             logs_view: None,
         };
-        this.refresh_device_status(cx);
+        this.refresh_device_status(None, cx);
         this
     }
 
-    fn refresh_device_status(&mut self, cx: &mut Context<Self>) {
+    fn refresh_device_status(&mut self, window: Option<&mut Window>, cx: &mut Context<Self>) {
         if self.device_loading {
             return;
         }
@@ -72,9 +72,11 @@ impl ApplicationRoot {
                 }
 
                 if let Some(config_view) = &self.config_view {
-                    config_view.update(cx, |view, cx| {
-                        view.update_device_status(Some(status.clone()), cx);
-                    });
+                    if let Some(window) = window {
+                        config_view.update(cx, |view, cx| {
+                            view.update_device_status(Some(status.clone()), window, cx);
+                        });
+                    }
                 }
 
                 if let Some(passkeys_view) = &self.passkeys_view {
@@ -120,8 +122,8 @@ impl Render for ApplicationRoot {
                     .on_select(|this: &mut Self, view, _, _| {
                         this.active_view = view;
                     })
-                    .on_refresh(|this, _, cx| {
-                        this.refresh_device_status(cx);
+                    .on_refresh(|this, window, cx| {
+                        this.refresh_device_status(Some(window), cx);
                     })
                     .render(cx),
                 )

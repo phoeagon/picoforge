@@ -309,7 +309,7 @@ impl ConfigView {
         let method = status.method.clone();
 
         self._task = Some(cx.spawn(async move |_, cx| {
-            let result = io::write_config(changes, method, None);
+            let result = io::write_config(changes, method, None).await;
 
             let _ = entity.update(cx, |this, cx| {
                 this.loading = false;
@@ -345,7 +345,7 @@ impl ConfigView {
         }));
     }
 
-    pub fn update_status(
+    pub(crate) fn update_device_status(
         &mut self,
         status: Option<FullDeviceStatus>,
         window: &mut Window,
@@ -395,25 +395,6 @@ impl ConfigView {
         let brightness = config.map(|c| c.led_brightness as f32).unwrap_or(8.0);
         self.led_brightness_slider
             .update(cx, |slider, cx| slider.set_value(brightness, window, cx));
-
-        cx.notify();
-    }
-
-    pub(crate) fn update_device_status(
-        &mut self,
-        status: Option<FullDeviceStatus>,
-        cx: &mut Context<Self>,
-    ) {
-        if self.device_status == status {
-            return;
-        }
-        self.device_status = status.clone();
-        let config = status.as_ref().map(|s| &s.config);
-
-        self.led_dimmable = config.map(|c| c.led_dimmable).unwrap_or(true);
-        self.led_steady = config.map(|c| c.led_steady).unwrap_or(false);
-        self.power_cycle = config.map(|c| c.power_cycle_on_reset).unwrap_or(false);
-        self.enable_secp256k1 = config.map(|c| c.enable_secp256k1).unwrap_or(true);
 
         cx.notify();
     }
