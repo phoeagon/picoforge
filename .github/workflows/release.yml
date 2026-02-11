@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - release
+  workflow_dispatch:
 
 jobs:
   publish-tauri:
@@ -143,6 +144,12 @@ jobs:
 
           git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git
 
+          git reset --hard HEAD
+          git clean -fd
+
+          git fetch origin main
+          git rebase origin/main
+
           CARGO_FILE="src-tauri/Cargo.toml"
           NEW_VERSION=$(grep -m 1 '^version' "$CARGO_FILE" | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
 
@@ -171,7 +178,6 @@ jobs:
           fi
 
           tito tag --offline --accept-auto-changelog --keep-version
-          git pull --rebase origin main
           git push --follow-tags origin HEAD:main HEAD:release
           EOF
 
@@ -186,4 +192,4 @@ jobs:
             fedora:latest \
             /workspace/update_spec_in_container.sh
 
-          rm ./update_spec_in_container.sh
+          rm -f ./update_spec_in_container.sh
