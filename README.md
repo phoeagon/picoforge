@@ -170,7 +170,8 @@ Or simply build it and link to the current directory:
 nix build github:librekeys/picoforge
 ```
 
-**Tip:** You can use our binary cache to save build time by allowing Nix to set extra-substitutes.
+> [!TIP]
+> You can use our binary cache to save build time by allowing Nix to set extra-substitutes.
 
 #### b. without Flakes
 
