@@ -24,7 +24,7 @@ ctap-hid-fido2 = "3.5" # For fido2 interface operations
 hidapi = "2.6"         # For fido2 interface operations but non-standard commands
 serde_cbor_2 = "0.13"
 rand = "0.10"
-bitflags = "2.10"
+bitflags = "2.11"
 ring = "0.17"          # For signing fido2 messages with pin token
 
 # For Application UI:
@@ -33,8 +33,9 @@ gpui-component = "0.5.1"
 rust-embed = "8.11.0"
 
 [profile.dev]
-incremental = true     # Compile your binary in smaller steps.
+incremental = true  # Compile your binary in smaller steps.
 codegen-units = 256
+opt-level = 1       # Prioritizes speed. Use `z` if you prefer small binary size.
 
 [profile.release]
 codegen-units = 1 # Allows LLVM to perform better optimization.

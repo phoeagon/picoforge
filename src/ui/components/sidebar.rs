@@ -68,14 +68,16 @@ impl<V: 'static> AppSidebar<V> {
         v_flex()
             .h_full()
             .bg(rgb(colors::zinc::ZINC900))
+            .border_r_1()
+            .border_color(border_color)
             .w(width)
             .child({
                 let header = h_flex()
                     .w_full()
                     .items_center()
                     .bg(rgb(colors::zinc::ZINC900))
-                    .border_r_1()
-                    .border_color(border_color)
+                    // .border_r_1()
+                    // .border_color(border_color)
                     .pt_4();
 
                 let current_width = width;
@@ -126,6 +128,7 @@ impl<V: 'static> AppSidebar<V> {
                     .w_full()
                     .flex_grow()
                     .bg(rgb(colors::zinc::ZINC900))
+                    .border_color(gpui::transparent_white())
                     .child(
                         SidebarGroup::new("Menu").child(
                             SidebarMenu::new()
@@ -172,7 +175,7 @@ impl<V: 'static> AppSidebar<V> {
                 v_flex()
                     .w_full()
                     .bg(rgb(0x111113))
-                    .border_r_1()
+                    // .border_r_1()
                     .border_t_1()
                     .border_color(border_color)
                     .p_2()

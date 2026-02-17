@@ -13,7 +13,7 @@ pub fn read_device_details() -> Result<FullDeviceStatus, PFError> {
     }
 }
 
-pub async fn write_config(
+pub fn write_config(
     config: AppConfigInput,
     method: DeviceMethod,
     pin: Option<String>,
@@ -51,7 +51,7 @@ pub fn reboot(to_bootsel: bool) -> Result<String, PFError> {
     rescue::reboot_device(to_bootsel)
 }
 
-pub async fn get_credentials(pin: String) -> Result<Vec<StoredCredential>, String> {
+pub fn get_credentials(pin: String) -> Result<Vec<StoredCredential>, String> {
     fido::get_credentials(pin)
 }
 

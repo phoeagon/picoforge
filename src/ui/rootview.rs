@@ -100,6 +100,7 @@ impl ApplicationRoot {
 impl Render for ApplicationRoot {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let target_width = if self.collapsed { px(48.) } else { px(255.) };
+
         if (self.sidebar_width - target_width).abs() > px(0.1) {
             self.sidebar_width = self.sidebar_width + (target_width - self.sidebar_width) * 0.2;
             window.request_animation_frame();

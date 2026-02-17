@@ -309,7 +309,20 @@ impl ConfigView {
         let method = status.method.clone();
 
         self._task = Some(cx.spawn(async move |_, cx| {
-            let result = io::write_config(changes, method, None).await;
+            let result = cx
+                .background_executor()
+                .spawn(async move { io::write_config(changes, method, None) })
+                .await;
+
+            let new_status_result = if result.is_ok() {
+                Some(
+                    cx.background_executor()
+                        .spawn(async move { io::read_device_details() })
+                        .await,
+                )
+            } else {
+                None
+            };
 
             let _ = entity.update(cx, |this, cx| {
                 this.loading = false;
@@ -318,7 +331,7 @@ impl ConfigView {
                     Ok(msg) => {
                         log::info!("Success: {}", msg);
 
-                        if let Ok(new_status) = io::read_device_details() {
+                        if let Some(Ok(new_status)) = new_status_result {
                             log::info!(
                                 "Refreshed device status. LED Steady: {}",
                                 new_status.config.led_steady
@@ -417,6 +430,7 @@ impl ConfigView {
                         v_flex().gap_2().child("Vendor ID (HEX)").child(
                             Input::new(&self.vid_input)
                                 .font_family("Mono")
+                                .bg(rgb(0x222225))
                                 .disabled(!self.is_custom_vendor),
                         ),
                     )
@@ -424,6 +438,7 @@ impl ConfigView {
                         v_flex().gap_2().child("Product ID (HEX)").child(
                             Input::new(&self.pid_input)
                                 .font_family("Mono")
+                                .bg(rgb(0x222225))
                                 .disabled(!self.is_custom_vendor),
                         ),
                     ),
@@ -655,7 +670,7 @@ impl Render for ConfigView {
                         .child(options_card),
                 )
                 .child(
-                    gpui_component::h_flex().justify_end().child(
+                    gpui_component::h_flex().justify_end().pt_4().child(
                         Button::new("apply-changes")
                             .icon(Icon::default().path("icons/save.svg"))
                             .child("Apply Changes")

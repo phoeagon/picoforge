@@ -88,12 +88,10 @@ impl PasskeysView {
 
         self._task = Some(cx.spawn(async move |_, cx| {
             let pin_for_bg = pin.clone();
-            // let result = cx
-            //     .background_executor()
-            //     .spawn(async move { io::get_credentials(pin_for_bg) })
-            //     .await;
-
-            let result = io::get_credentials(pin_for_bg).await;
+            let result = cx
+                .background_executor()
+                .spawn(async move { io::get_credentials(pin_for_bg) })
+                .await;
 
             let _ = entity.update(cx, |this, cx| {
                 this.loading = false;
@@ -158,7 +156,10 @@ impl PasskeysView {
     fn refresh_credentials(&mut self, pin: String, cx: &mut Context<Self>) {
         let entity = cx.entity().downgrade();
         self._task = Some(cx.spawn(async move |_, cx| {
-            let result = io::get_credentials(pin).await;
+            let result = cx
+                .background_executor()
+                .spawn(async move { io::get_credentials(pin) })
+                .await;
 
             let _ = entity.update(cx, |this, cx| {
                 this.loading = false;
@@ -187,6 +188,7 @@ impl PasskeysView {
                 .child(
                     v_flex()
                         .gap_4()
+                        .pb_4()
                         .child("Enter your device PIN to view saved passkeys")
                         .child(Input::new(&pin_input)),
                 )
@@ -235,10 +237,10 @@ impl PasskeysView {
             dialog
                 .confirm()
                 .title("Delete Passkey")
-                .child(format!(
+                .child(div().pb_4().child(format!(
                     "Are you sure you want to delete the passkey for {}?",
                     name
-                ))
+                )))
                 .on_ok(move |_, _, cx| {
                     let _ = view_handle.update(cx, |this, cx| {
                         this.execute_delete(cred_id.clone(), pin_str.clone(), cx);
@@ -285,6 +287,7 @@ impl PasskeysView {
                 .child(
                     v_flex()
                         .gap_4()
+                        .pb_4()
                         .child("Current PIN")
                         .child(Input::new(&current))
                         .child("New PIN")
@@ -395,6 +398,7 @@ impl PasskeysView {
                 .child(
                     v_flex()
                         .gap_4()
+                        .pb_4()
                         .child(
                              v_flex()
                                 .gap_2()
@@ -894,7 +898,7 @@ impl PasskeysView {
                                 div()
                                     .size_10()
                                     .rounded_md()
-                                    .bg(theme.secondary)
+                                    .bg(rgb(0x3b3b3e))
                                     .flex()
                                     .items_center()
                                     .justify_center()

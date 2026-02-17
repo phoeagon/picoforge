@@ -15,11 +15,11 @@ let
     wayland-protocols
     libunwind
     libdrm
-    xorg.libX11
-    xorg.libXcursor
-    xorg.libXi
-    xorg.libXrandr
-    xorg.libxcb
+    libX11
+    libXcursor
+    libXi
+    libXrandr
+    libxcb
   ];
 
   packages = with pkgs; [

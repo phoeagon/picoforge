@@ -103,11 +103,13 @@ impl Render for LogsView {
                                 .flex_1()
                                 .h(px(500.0))
                                 .child(div().p_4().font_family("Mono").text_sm().child(
-                                    v_flex().gap_1().children(self.logs.iter().map(|log| {
+                                    v_flex().gap_0().children(self.logs.iter().map(|log| {
                                         let color = if log.contains("ERROR") {
                                             gpui::red()
                                         } else if log.contains("WARN") {
                                             gpui::yellow()
+                                        } else if log.contains("INFO") {
+                                            gpui::green()
                                         } else {
                                             theme.foreground
                                         };
