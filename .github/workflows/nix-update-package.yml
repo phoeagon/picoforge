@@ -31,3 +31,6 @@ jobs:
         token: ${{ secrets.NIX_UPDATE_TOKEN }}
         blacklist: "default"
         branch: "build/update-nix-package"
+        pr-title: "build(package.nix): update"
+        pr-body: "Automated changes by the [nix-update-actions](https://github.com/gepbird/nix-update-action) GitHub Action."
+        pr-labels: "Packaging"
