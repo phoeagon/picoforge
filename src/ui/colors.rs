@@ -1,3 +1,5 @@
+// NOTE: This module is work in progress and more colors will be added. Also I am thinking of storing these as HSLA instead of u32 RGB values.
+// Reference: https://ui.shadcn.com/colors
 pub mod zinc {
     #![allow(unused)]
     pub const ZINC50: u32 = 0xfafafa;

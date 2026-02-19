@@ -46,6 +46,7 @@ fn main() {
                     traffic_light_position: Some(gpui::point(px(12.0), px(12.0))),
                 }),
 
+                // Render our own window decorations(shadows and resize attack area) for linux/bsd.
                 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
                 window_background: gpui::WindowBackgroundAppearance::Transparent,
                 #[cfg(any(target_os = "linux", target_os = "freebsd"))]

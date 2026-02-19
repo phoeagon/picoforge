@@ -102,21 +102,33 @@ impl Render for LogsView {
                                 .overflow_y_scrollbar()
                                 .flex_1()
                                 .h(px(500.0))
-                                .child(div().p_4().font_family("Mono").text_sm().child(
-                                    v_flex().gap_0().children(self.logs.iter().map(|log| {
-                                        let color = if log.contains("ERROR") {
-                                            gpui::red()
-                                        } else if log.contains("WARN") {
-                                            gpui::yellow()
-                                        } else if log.contains("INFO") {
-                                            gpui::green()
-                                        } else {
-                                            theme.foreground
-                                        };
+                                .child(
+                                    div()
+                                        .overflow_y_scrollbar()
+                                        .max_h(px(500.0))
+                                        .p_4()
+                                        .font_family("Mono")
+                                        .text_sm()
+                                        .child(v_flex().gap_neg_4().children(
+                                            self.logs.iter().map(|log| {
+                                                // TODO: Convert these values to constants in colors.rs
+                                                let color = if log.contains("ERROR") {
+                                                    rgb(0xef4444)
+                                                } else if log.contains("WARN") {
+                                                    rgb(0xfde047)
+                                                } else if log.contains("INFO") {
+                                                    rgb(0x4ade80)
+                                                } else {
+                                                    theme.foreground.to_rgb()
+                                                };
 
-                                        div().text_color(color).child(log.clone())
-                                    })),
-                                ))
+                                                div()
+                                                    .text_color(color)
+                                                    .child(log.clone())
+                                                    .cursor_text()
+                                            }),
+                                        )),
+                                )
                                 .into_any_element()
                         }),
                 )
