@@ -29,7 +29,8 @@ ring = "0.17"          # For signing fido2 messages with pin token
 
 # For Application UI:
 gpui = { version = "0.2.2", features = [] }
-gpui-component = "0.5.1"
+gpui-component = { git = "https://github.com/librekeys/gpui-component", branch = "fix/client-window-linux" }
+# gpui-component = "0.5.1"
 rust-embed = "8.11.0"
 
 [profile.dev]
