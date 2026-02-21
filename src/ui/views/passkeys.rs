@@ -4,6 +4,7 @@ use crate::ui::components::{
     button::{PFButton, PFIconButton},
     card::Card,
     dialog,
+    dialog::{ChangePinContent, ConfirmContent, PinPromptContent},
     page_view::PageView,
 };
 use gpui::*;
@@ -78,13 +79,19 @@ impl PasskeysView {
         cx.notify();
     }
 
-    fn unlock_storage(&mut self, pin: String, cx: &mut Context<Self>) {
+    fn unlock_storage(
+        &mut self,
+        pin: String,
+        dialog_handle: WeakEntity<PinPromptContent>,
+        cx: &mut Context<Self>,
+    ) {
         if self.loading {
             return;
         }
         self.loading = true;
         cx.notify();
 
+        log::info!("Unlocking FIDO storage...");
         let entity = cx.entity().downgrade();
 
         self._task = Some(cx.spawn(async move |_, cx| {
@@ -98,14 +105,19 @@ impl PasskeysView {
                 this.loading = false;
                 match result {
                     Ok(creds) => {
+                        log::info!("Storage unlocked. {} credentials found.", creds.len());
                         this.unlocked = true;
                         this.cached_pin = Some(pin);
                         this.credentials = creds;
-                        cx.emit(PasskeysEvent::CloseDialog);
+                        let _ = dialog_handle.update(cx, |d, cx| {
+                            d.set_success("Storage unlocked successfully.".to_string(), cx);
+                        });
                     }
                     Err(e) => {
-                        let msg = format!("Failed to unlock: {}", e);
-                        cx.emit(PasskeysEvent::Notification(msg));
+                        log::error!("Failed to unlock storage: {}", e);
+                        let _ = dialog_handle.update(cx, |d, cx| {
+                            d.set_error(format!("Failed to unlock: {}", e), cx);
+                        });
                     }
                 }
                 cx.notify();
@@ -120,13 +132,20 @@ impl PasskeysView {
         cx.notify();
     }
 
-    fn execute_delete(&mut self, credential_id: String, pin: String, cx: &mut Context<Self>) {
+    fn execute_delete(
+        &mut self,
+        credential_id: String,
+        pin: String,
+        dialog_handle: WeakEntity<ConfirmContent>,
+        cx: &mut Context<Self>,
+    ) {
         if self.loading {
             return;
         }
         self.loading = true;
         cx.notify();
 
+        log::info!("Deleting credential...");
         let entity = cx.entity().downgrade();
 
         self._task = Some(cx.spawn(async move |_, cx| {
@@ -138,16 +157,18 @@ impl PasskeysView {
 
             let _ = entity.update(cx, |this, cx| match result {
                 Ok(_) => {
+                    log::info!("Credential deleted successfully.");
                     this.refresh_credentials(pin, cx);
-                    cx.emit(PasskeysEvent::CloseDialog);
-                    cx.emit(PasskeysEvent::Notification(
-                        "Credential deleted".to_string(),
-                    ));
+                    let _ = dialog_handle.update(cx, |d, cx| {
+                        d.set_success("Credential deleted successfully.".to_string(), cx);
+                    });
                 }
                 Err(e) => {
+                    log::error!("Error deleting credential: {}", e);
                     this.loading = false;
-                    let msg = format!("Error deleting: {}", e);
-                    cx.emit(PasskeysEvent::Notification(msg));
+                    let _ = dialog_handle.update(cx, |d, cx| {
+                        d.set_error(format!("Error deleting: {}", e), cx);
+                    });
                     cx.notify();
                 }
             });
@@ -181,9 +202,9 @@ impl PasskeysView {
             "Unlock",
             window,
             cx,
-            move |pin, _, cx| {
+            move |pin, dialog_handle, cx| {
                 let _ = view_handle.update(cx, |this, cx| {
-                    this.unlock_storage(pin, cx);
+                    this.unlock_storage(pin, dialog_handle, cx);
                 });
             },
         );
@@ -208,9 +229,9 @@ impl PasskeysView {
             ButtonVariant::Danger,
             window,
             cx,
-            move |_, cx| {
+            move |dialog_handle, cx| {
                 let _ = view_handle.update(cx, |this, cx| {
-                    this.execute_delete(cred_id.clone(), pin_str.clone(), cx);
+                    this.execute_delete(cred_id.clone(), pin_str.clone(), dialog_handle, cx);
                 });
             },
         );
@@ -218,22 +239,12 @@ impl PasskeysView {
 
     fn open_change_pin_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let view_handle = cx.entity().downgrade();
-        let view_for_error = cx.entity().downgrade();
 
-        dialog::open_change_pin(
-            window,
-            cx,
-            move |msg, cx| {
-                let _ = view_for_error.update(cx, |_, cx| {
-                    cx.emit(PasskeysEvent::Notification(msg.to_string()));
-                });
-            },
-            move |current, new, cx| {
-                let _ = view_handle.update(cx, |this, cx| {
-                    this.change_pin(current, new, cx);
-                });
-            },
-        );
+        dialog::open_change_pin(window, cx, move |current, new, dialog_handle, cx| {
+            let _ = view_handle.update(cx, |this, cx| {
+                this.change_pin(current, new, dialog_handle, cx);
+            });
+        });
     }
 
     fn open_min_pin_length_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -354,12 +365,20 @@ impl PasskeysView {
         });
     }
 
-    fn change_pin(&mut self, current: String, new: String, cx: &mut Context<Self>) {
+    fn change_pin(
+        &mut self,
+        current: String,
+        new: String,
+        dialog_handle: WeakEntity<ChangePinContent>,
+        cx: &mut Context<Self>,
+    ) {
         if self.loading {
             return;
         }
         self.loading = true;
         cx.notify();
+
+        log::info!("Changing FIDO PIN...");
         let entity = cx.entity().downgrade();
 
         self._task = Some(cx.spawn(async move |_, cx| {
@@ -372,15 +391,19 @@ impl PasskeysView {
                 this.loading = false;
                 match result {
                     Ok(msg) => {
-                        cx.emit(PasskeysEvent::CloseDialog);
-                        cx.emit(PasskeysEvent::Notification(msg));
-                        // Refresh device info
+                        log::info!("PIN changed: {}", msg);
                         if let Ok(info) = io::get_fido_info() {
                             this.fido_info = Some(info);
                         }
+                        let _ = dialog_handle.update(cx, |d, cx| {
+                            d.set_success("PIN changed successfully.".to_string(), cx);
+                        });
                     }
                     Err(e) => {
-                        cx.emit(PasskeysEvent::Notification(format!("Error: {}", e)));
+                        log::error!("PIN change failed: {}", e);
+                        let _ = dialog_handle.update(cx, |d, cx| {
+                            d.set_error(format!("Error: {}", e), cx);
+                        });
                     }
                 }
                 cx.notify();
@@ -400,6 +423,7 @@ impl PasskeysView {
         }
         self.loading = true;
         cx.notify();
+        log::info!("Updating minimum PIN length to {}...", min_len);
         let entity = cx.entity().downgrade();
 
         self._task = Some(cx.spawn(async move |_, cx| {
@@ -411,6 +435,7 @@ impl PasskeysView {
                 .await;
 
             if let Err(e) = res_len {
+                log::error!("Failed to set minimum PIN length: {}", e);
                 let _ = entity.update(cx, |this, cx| {
                     this.loading = false;
                     cx.emit(PasskeysEvent::Notification(format!(
@@ -431,6 +456,7 @@ impl PasskeysView {
                     this.loading = false;
                     match res_pin {
                         Ok(_) => {
+                            log::info!("Minimum length and PIN updated successfully.");
                             cx.emit(PasskeysEvent::CloseDialog);
                             cx.emit(PasskeysEvent::Notification(
                                 "Minimum length and PIN updated".to_string(),
@@ -440,6 +466,7 @@ impl PasskeysView {
                             }
                         }
                         Err(e) => {
+                            log::error!("Length set, but PIN change failed: {}", e);
                             cx.emit(PasskeysEvent::Notification(format!(
                                 "Length set, but PIN change failed: {}",
                                 e
@@ -451,6 +478,7 @@ impl PasskeysView {
             } else {
                 let _ = entity.update(cx, |this, cx| {
                     this.loading = false;
+                    log::info!("Minimum PIN length updated to {}.", min_len);
                     cx.emit(PasskeysEvent::CloseDialog);
                     cx.emit(PasskeysEvent::Notification(format!(
                         "Minimum length updated to {}",

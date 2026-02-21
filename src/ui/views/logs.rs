@@ -64,7 +64,7 @@ impl Render for LogsView {
 
         let copy_logs_listener = cx.listener(|this, _, _, cx| {
             let all_logs = this.logs.join("\n");
-            log::info!("Copying {} bytes of logs", all_logs.len());
+            log::debug!("Copying {} bytes of logs", all_logs.len());
             cx.write_to_clipboard(ClipboardItem::new_string(all_logs));
         });
 
@@ -128,10 +128,7 @@ impl Render for LogsView {
                                                     theme.foreground.to_rgb()
                                                 };
 
-                                                div()
-                                                    .text_color(color)
-                                                    .child(log.clone())
-                                                    .cursor_text()
+                                                div().text_color(color).child(log.clone())
                                             }),
                                         )),
                                 )

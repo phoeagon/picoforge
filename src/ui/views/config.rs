@@ -1,6 +1,6 @@
 use crate::device::io;
 use crate::device::types::{AppConfigInput, FullDeviceStatus};
-use crate::ui::components::{card::Card, dialog, page_view::PageView};
+use crate::ui::components::{card::Card, dialog, dialog::PinPromptContent, page_view::PageView};
 use crate::ui::types::{LedDriverType, UsbIdentityPreset};
 use gpui::*;
 use gpui_component::button::{ButtonCustomVariant, ButtonVariants};
@@ -211,6 +211,7 @@ impl ConfigView {
         changes: AppConfigInput,
         method: crate::device::types::DeviceMethod,
         pin: Option<String>,
+        dialog_handle: Option<WeakEntity<PinPromptContent>>,
         cx: &mut Context<Self>,
     ) {
         self.loading = true;
@@ -255,11 +256,24 @@ impl ConfigView {
                             this.enable_secp256k1 = config.enable_secp256k1;
 
                             this.device_status = Some(new_status);
-                            cx.notify();
+                        }
+
+                        if let Some(ref dh) = dialog_handle {
+                            let _ = dh.update(cx, |d, cx| {
+                                d.set_success(
+                                    "Configuration applied successfully.".to_string(),
+                                    cx,
+                                );
+                            });
                         }
                     }
                     Err(e) => {
                         log::error!("Error saving config: {}", e);
+                        if let Some(ref dh) = dialog_handle {
+                            let _ = dh.update(cx, |d, cx| {
+                                d.set_error(format!("Failed to apply: {}", e), cx);
+                            });
+                        }
                     }
                 }
 
@@ -282,12 +296,13 @@ impl ConfigView {
             "Confirm",
             window,
             cx,
-            move |pin, _, cx| {
+            move |pin, dialog_handle, cx| {
                 let _ = view_handle.update(cx, |this, cx| {
                     this.write_config_to_device(
                         changes.clone(),
                         crate::device::types::DeviceMethod::Fido,
                         Some(pin),
+                        Some(dialog_handle),
                         cx,
                     );
                 });
@@ -396,7 +411,7 @@ impl ConfigView {
         if method == crate::device::types::DeviceMethod::Fido {
             self.open_pin_dialog(changes, window, cx);
         } else {
-            self.write_config_to_device(changes, method, None, cx);
+            self.write_config_to_device(changes, method, None, None, cx);
         }
     }
 

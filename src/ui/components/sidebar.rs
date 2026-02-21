@@ -176,6 +176,7 @@ impl<V: 'static> AppSidebar<V> {
                     .w_full()
                     .bg(rgb(0x111113))
                     // .border_r_1()
+                    .mt_1()
                     .border_t_1()
                     .border_color(border_color)
                     .p_2()
