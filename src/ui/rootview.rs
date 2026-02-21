@@ -142,7 +142,10 @@ impl Render for ApplicationRoot {
                             let container = h_flex();
 
                             #[cfg(target_os = "macos")]
-                            let container = h_flex().ml(gpui::px(-72.));
+                            let container = {
+                                let offset = self.sidebar_width.min(gpui::px(72.));
+                                h_flex().ml(gpui::px(-offset.0))
+                            };
 
                             container
                                 .w_full()
