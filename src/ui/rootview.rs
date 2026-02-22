@@ -115,6 +115,7 @@ impl Render for ApplicationRoot {
         }
 
         let dialog_layer = Root::render_dialog_layer(window, cx);
+        let sheet_layer = Root::render_sheet_layer(window, cx);
 
         let title_bar = TitleBar::new().bg(cx.theme().title_bar).child(
             h_flex()
@@ -220,5 +221,6 @@ impl Render for ApplicationRoot {
             .overflow_hidden()
             .child(body)
             .children(dialog_layer)
+            .children(sheet_layer)
     }
 }
