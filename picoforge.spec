@@ -72,6 +72,51 @@ install -m 644 static/appIcons/in.suyogtandel.picoforge.svg %{buildroot}%{_datad
 %{_datadir}/icons/hicolor/scalable/apps/in.suyogtandel.picoforge.svg
 
 %changelog
+* Sun Feb 22 2026 Suyog Tandel <git@suyogtandel.in> 0.4.0-3
+- chore: sync spec to 0.4.0 [skip ci] (git@suyogtandel.in)
+- fix(ui): application view overflowing out of the window (git@suyogtandel.in)
+- chore(ui): change corner radius of default theme (git@suyogtandel.in)
+- change topbar/sidebar layout (fabrice.bellamy@distrilab.fr)
+- chore(docs): Add contribution and issue templates, and contributing guide
+  (git@suyogtandel.in)
+- feat(ui): Add passkey info bottom sheet to the passkeyview
+  (git@suyogtandel.in)
+- chore(ui): Minor UI improvements in about view and config view
+  (git@suyogtandel.in)
+- quit the application when main window is closed on macOS
+  (fabrice.bellamy@distrilab.fr)
+- fix compilation error introduced by previous commit
+  (fabrice.bellamy@distrilab.fr)
+- fix sidebar toggle button position when sidebar is minimized
+  (fabrice.bellamy@distrilab.fr)
+- ui tweaks for macOS (fabrice.bellamy@distrilab.fr)
+- feat(ui): Add tag component to match the svelte-shadcnui pills
+  (git@suyogtandel.in)
+- feat(ui): Restore original shadcn-ui based zinc theme (git@suyogtandel.in)
+- fix(ui): pressing enter key, unlocks the passkeys storage
+  (226018678+jetcookies@users.noreply.github.com)
+- feat(ui): Show success/error states in dialogs (git@suyogtandel.in)
+- feat(ui): extract dialogs into a custom component (git@suyogtandel.in)
+- chore(ui): Minor code cleanup and refactor (git@suyogtandel.in)
+- chore(ui): Improve logs view line spacing and set max terminal height
+  (git@suyogtandel.in)
+- fix: window resize cursor shown when picoforge maximised on linux
+  (git@suyogtandel.in)
+- chore(ci/cd): Modify release workflow to build gpui version of the
+  application and fix appimages (#64) (git@suyogtandel.in)
+- fix(ci/cd): release build workflow failing due to result no build command
+  (git@suyogtandel.in)
+- fix(ci/cd): release build workflow failing due to result output in wrong dir
+  (git@suyogtandel.in)
+- fix(ci/cd): release build workflow cleanup (git@suyogtandel.in)
+- ci(.github/workflows/nix-update-package.yml): configure pr-title, pr-body &
+  pr-labels (226018678+jetcookies@users.noreply.github.com)
+- ci(.github/workflows/nix-update-package.yml): add a workflow to periodically
+  update Nix package (226018678+jetcookies@users.noreply.github.com)
+- ci(.github/workflows/nix-check-package.yml): add a workflow to check whether
+  the Nix package can be successfully built
+  (226018678+jetcookies@users.noreply.github.com)
+
 * Wed Feb 18 2026 Suyog Tandel <git@suyogtandel.in> 0.4.0-2
 - chore(ci/cd): update release workflow to use cargo packager and drop appimage
   build (git@suyogtandel.in)
