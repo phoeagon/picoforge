@@ -89,30 +89,22 @@ To have the pcscd service, you may need to install pcsc-lite if it is not instal
 
 [COPR](https://copr.fedorainfracloud.org/coprs/lockedmutex/picoforge/) is the recommended way of installing the application on Fedora.
 
-#### Fedora Rawhide, 43, 42
+#### Fedora Rawhide, 44, 43, 42
 
 ```bash
 sudo dnf copr enable lockedmutex/picoforge
 sudo dnf install picoforge
 ```
 
-If you prefer to install the `.rpm` manually, you can download it from the [Latest Releases](https://github.com/librekeys/picoforge/releases/latest).
-
-<details>
-<summary><strong>Fedora Dependencies (for manual .rpm install)</strong></summary>
+If you prefer to install the `.rpm` manually, download the `picoforge-*.el8.*.rpm` (available for `x86_64` and `aarch64`) from the [Latest Releases](https://github.com/librekeys/picoforge/releases/latest). This RPM is built on EPEL 8 and is compatible with Fedora and all EPEL-based distributions.
 
 ```bash
-sudo dnf install webkit2gtk4.1 libsoup3 gtk3 \
-pcsc-lite pcsc-tools hidapi libsecret \
-gstreamer1-plugins-base libavif libwebp enchant2
-
-sudo systemctl enable --now pcscd
+sudo dnf install ./picoforge-*.el8.*.rpm
 ```
-</details>
 
 ### RHEL-based Distributions
 
-#### RHEL, CentOS, AlmaLinux, Rocky Linux (EPEL 10)
+#### RHEL, CentOS, AlmaLinux, Rocky Linux (EPEL 10, 9, 8)
 
 ```bash
 sudo dnf install dnf-plugins-core
@@ -120,7 +112,10 @@ sudo dnf copr enable lockedmutex/picoforge
 sudo dnf install picoforge
 ```
 
-**Troubleshooting**: Ensure EPEL repository is enabled.
+> [!NOTE]
+> For EPEL 8, use `yum` instead of `dnf` if `dnf` is not available.
+
+**Troubleshooting**: Ensure the EPEL repository is enabled on your system.
 
 ### openSUSE
 
@@ -141,6 +136,23 @@ sudo zypper install picoforge
 ```
 
 **Troubleshooting**: Verify the repository URL matches your distribution version.
+
+For manual RPM install, download the `picoforge-*.suse.lp156.*.rpm` from [Latest Releases](https://github.com/librekeys/picoforge/releases/latest).
+
+```bash
+sudo zypper install ./picoforge-*.suse.lp156.*.rpm
+```
+
+### openEuler
+
+#### openEuler 24
+
+PicoForge is available via COPR for openEuler 24.
+
+```bash
+sudo dnf copr enable lockedmutex/picoforge
+sudo dnf install picoforge
+```
 
 ### Debian / Ubuntu
 
@@ -167,60 +179,36 @@ sudo apt install ./picoforge_[version]_amd64.deb
 
 ### Other Distributions
 
-For distributions that do not have a native package or repository (e.g., Arch Linux), you can use Distrobox or AppImage.
+For distributions that do not have a native package or repository (e.g., Arch Linux), you can use AppImage.
 
-#### Distrobox (Recommended)
+#### AppImage (Recommended)
 
-If you encounter dependency issues on your specific distribution, we highly recommend using **Distrobox**. This method runs the application inside a stable Fedora environment while integrating it seamlessly with your desktop.
-
-**Requirements:**
-- [Distrobox](https://distrobox.it/) installed on your system.
-- A container engine like `podman` or `docker`.
-
-**Step-by-Step Guide:**
-
-1.  **Create the Container:**
-    We will use a standard Fedora Toolbox image which is known to be compatible.
-    ```bash
-    distrobox create -i quay.io/fedora/fedora-toolbox:43 -n picoforge
-    ```
-
-2.  **Enter the Container:**
-    ```bash
-    distrobox enter picoforge
-    ```
-
-3.  **Install the Application:**
-    ```bash
-    sudo dnf copr enable lockedmutex/picoforge
-    sudo dnf install picoforge
-    ```
-
-4.  **Export to Host System:**
-    This step creates a shortcut in your system's application menu so you can launch it like any other app.
-    ```bash
-    distrobox-export --app picoforge
-    ```
-
-5.  **Launch:**
-    You can now find and launch "picoforge" from your application launcher.
-
-#### AppImage
-
-> [!WARNING]
-> AppImages in releases have a lot of issues right now and do not work correctly on a lot of distros, so it is better to avoid them if possible. Please use the Distrobox method if you can.
-
-The AppImage format contains most dependencies and runs on almost any Linux distribution.
+AppImage is the recommended way to run PicoForge on unsupported distributions. The format is self-contained and runs on almost any Linux distribution.
 
 1.  Download the `.AppImage` file from the [Latest Releases](https://github.com/librekeys/picoforge/releases/latest).
 2.  Mark the file as executable:
     ```bash
     chmod +x picoforge_*.AppImage
     ```
-3.  Launch the file.
+3.  Launch the file:
+    ```bash
+    ./picoforge_*.AppImage
+    ```
 
 > [!NOTE]
 > If the AppImage does not start, check if you are missing FUSE (Filesystem in Userspace), which is required for AppImages on some newer distributions like Ubuntu 22.04+.
+
+##### Managing AppImages with Gear Lever
+
+For a better experience, you can use [Gear Lever](https://github.com/mijorus/gearlever) to manage AppImages. It integrates AppImages into your application menu, handles updates, and keeps them organized in a dedicated folder.
+
+Install Gear Lever via Flatpak:
+
+```bash
+flatpak install flathub it.mijorus.gearlever
+```
+
+Once installed, simply open the downloaded `.AppImage` file with Gear Lever (or drag and drop it), and it will integrate PicoForge into your system — complete with a desktop entry and icon.
 
 ### Post-Installation
 

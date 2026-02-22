@@ -2,16 +2,11 @@
 
 Before building, ensure you have the following requirements installed:
 
-- **[Node.js](https://nodejs.org/)** - JavaScript/TypeScript runtime (Required for frontend dependencies)
-- **[Deno](https://deno.land/)** - JavaScript/TypeScript runtime (Preferred build tool)
 - **[Rust](https://www.rust-lang.org/)** - System programming language (1.90+)
 - **PC/SC Middleware**:
   - Linux: `pcscd` (usually pre-installed)
   - macOS: Built-in
   - Windows: Built-in
-
-> [!IMPORTANT]
-> **Deno is required** to build the application as intended. Node.js is also required because some frontend dependencies rely on it. The npm commands provided in this guide assume Deno is installed and are provided as a fallback.
 
 ## Building from Source
 
@@ -19,54 +14,17 @@ Before building, ensure you have the following requirements installed:
 
 #### Development Build
 
-**With Deno (Recommended):**
 ```bash
-deno task tauri dev
-```
-
-**With npm:**
-```bash
-npm run tauri dev
+cargo run
 ```
 
 #### Production Build
 
-**With Deno (Recommended):**
 ```bash
-deno task tauri build
+cargo build --release
 ```
 
-**With npm:**
-```bash
-npm run tauri build
-```
-
-The compiled binaries will be available in:
-- **Linux**: `src-tauri/target/release/bundle/`
-- **macOS**: `src-tauri/target/release/bundle/dmg/`
-- **Windows**: `src-tauri/target/release/bundle/`
-
-### Alternate Method: Pure npm Build (Not Recommended)
-
-If you must use npm exclusively (without Deno installed), you can modify `src-tauri/tauri.conf.json` to change the build commands:
-
-```json
-  "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
-    "frontendDist": "../build"
-  },
-```
-
-After this change, you can use:
-```bash
-npm run build
-npm run tauri build
-```
-
-> [!CAUTION]
-> This deviation from the standard build process is **not recommended** for contributors. The project is designed to be built using Deno. The `package-lock.json` and npm commands exist primarily to facilitate packaging for Nix.
+The compiled binary will be available in `target/release/picoforge` (Linux/macOS) or `target/release/picoforge.exe` (Windows).
 
 ## Building and Development with Nix
 
@@ -134,5 +92,5 @@ nix-shell
 Then you can build from source and run the application with:
 
 ```bash
-deno task tauri dev
+cargo run
 ```
