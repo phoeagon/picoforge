@@ -72,6 +72,16 @@ install -m 644 static/appIcons/in.suyogtandel.picoforge.svg %{buildroot}%{_datad
 %{_datadir}/icons/hicolor/scalable/apps/in.suyogtandel.picoforge.svg
 
 %changelog
+* Sun Feb 22 2026 Suyog Tandel <git@suyogtandel.in> 0.4.1-1
+- chore: sync spec to 0.4.1 [skip ci] (git@suyogtandel.in)
+- chore: bump app version to 0.4.1 (git@suyogtandel.in)
+- fix(ui): Setup pin for a newly flashed pico-key(#68) (git@suyogtandel.in)
+- build(package.nix): 0.3.1 -> 0.4.0
+  (226018678+jetcookies@users.noreply.github.com)
+- docs: update installation and building wiki with gpui version of the app
+  (git@suyogtandel.in)
+- chore: update readme screenshots (git@suyogtandel.in)
+
 * Sun Feb 22 2026 Suyog Tandel <git@suyogtandel.in> 0.4.0-3
 - chore: sync spec to 0.4.0 [skip ci] (git@suyogtandel.in)
 - fix(ui): application view overflowing out of the window (git@suyogtandel.in)
